@@ -78,6 +78,13 @@ class ParseFeedTest(unittest.TestCase):
         self.assertEqual(events[0].rating, 4)
         self.assertEqual(events[0].review, "Loved the sand.")
 
+    def test_alternate_shelf_wording(self):
+        xml = feed(
+            item("ReadStatus1", "Sam is currently reading 'Dune'", BOOK.format(verb="Sam is currently reading", after="")),
+            item("ReadStatus2", "Sam has read 'Dune'", BOOK.format(verb="Sam has read", after="")),
+        )
+        self.assertEqual([e.kind for e in bot.parse_feed(xml, READER)[1]], ["started", "finished"])
+
     def test_ignores_junk_items(self):
         xml = feed(
             item("Recommendation1", "&lt;Recommendation id=1&gt;", ""),

@@ -128,9 +128,10 @@ def _large_cover(url: str | None) -> str | None:
 def classify(guid: str, title: str) -> str | None:
     """Map a feed item to one of ALL_EVENTS, or None for items we ignore."""
     if guid.startswith("ReadStatus"):
-        if " started reading " in title:
+        # Goodreads words the same event differently depending on how it was logged.
+        if " started reading " in title or " is currently reading " in title:
             return "started"
-        if " finished reading " in title:
+        if " finished reading " in title or " has read " in title:
             return "finished"
         if " wants to read " in title:
             return "want"
