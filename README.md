@@ -30,7 +30,7 @@ Choose one of these:
 
   ```sh
   # Create an empty private repo on GitHub first (e.g. my-book-club-bot), then:
-  git clone https://github.com/<upstream-owner>/goodreads-discord-bot.git my-book-club-bot
+  git clone https://github.com/aspadiyath/goodreads-discord-bot.git my-book-club-bot
   cd my-book-club-bot
   git remote rename origin upstream
   git remote add origin https://github.com/<you>/my-book-club-bot.git
