@@ -1,0 +1,33 @@
+# Copy this file to config.toml and list the people whose Goodreads activity
+# should be posted. The Discord webhook URL is NOT stored here - add it as the
+# DISCORD_WEBHOOK_URL repository secret instead (see README).
+
+[settings]
+# Which kinds of activity to post. Remove any you find too noisy.
+#   started  - "Sam started reading Dune"
+#   progress - "Sam is on page 120 of 412" / "Sam is 50% done"
+#   finished - "Sam finished reading Dune"
+#   rated    - star ratings and written reviews
+#   want     - "Sam wants to read Dune" (added to their to-read shelf)
+events = ["started", "progress", "finished", "rated", "want"]
+
+# Never post anything older than this many days (guards against a backlog
+# being dumped into the channel if the bot has been paused for a while).
+max_age_days = 3
+
+# Optional: override the webhook's name/avatar in Discord.
+# bot_username = "Book Club"
+# bot_avatar_url = "https://example.com/avatar.png"
+
+# One [[readers]] block per person. `goodreads` can be the numeric user id or
+# any Goodreads profile / RSS URL, e.g. https://www.goodreads.com/user/show/1-otis
+# Their profile must be public. `name` is optional (defaults to their
+# Goodreads first name).
+
+[[readers]]
+name = "Otis"
+goodreads = "https://www.goodreads.com/user/show/1-otis-chandler"
+
+# [[readers]]
+# name = "Friend"
+# goodreads = "12345678"

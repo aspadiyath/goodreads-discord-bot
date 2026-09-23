@@ -1,0 +1,49 @@
+name: Check Goodreads feeds
+
+on:
+  schedule:
+    # Hourly, at a random-ish minute (GitHub's top-of-the-hour queue is slow).
+    # Goodreads feeds only hold ~10 recent items per person, so don't go much
+    # slower than this if your friends are very active.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+    inputs:
+      replay:
+        description: "Test mode: re-post each reader's N most recent events (0 = normal run)"
+        default: "0"
+
+permissions:
+  contents: write # to commit state.json
+
+concurrency:
+  group: goodreads-feeds
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Post new Goodreads activity
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPLAY: ${{ inputs.replay || '0' }}
+        run: |
+          if [ "$REPLAY" != "0" ]; then
+            python3 goodreads_bot.py --replay "$REPLAY"
+          else
+            python3 goodreads_bot.py
+          fi
+
+      - name: Save state
+        run: |
+          [ -f state.json ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Update feed state"
+          git pull --rebase
+          git push
