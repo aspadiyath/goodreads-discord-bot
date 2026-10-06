@@ -85,6 +85,19 @@ class ParseFeedTest(unittest.TestCase):
         )
         self.assertEqual([e.kind for e in bot.parse_feed(xml, READER)[1]], ["started", "finished"])
 
+    def test_fractional_ratings(self):
+        xml = feed(
+            item("Review1", "Sam added 'Dune'", BOOK.format(verb="Sam gave 3.5 stars to", after="")),
+            item("Review2", "Sam added 'Dune'", BOOK.format(verb="Sam gave 3.75 stars to", after="")),
+            item("Review3", "Sam added 'Dune'", BOOK.format(verb="Sam gave 1 star to", after="")),
+        )
+        self.assertEqual([e.rating for e in bot.parse_feed(xml, READER)[1]], [3.5, 3.75, 1])
+
+    def test_duplicate_items_are_collapsed(self):
+        rated = BOOK.format(verb="Sam gave 3.5 stars to", after="")
+        xml = feed(item("Review1", "Sam added 'Dune'", rated), item("Review1", "Sam added 'Dune'", rated))
+        self.assertEqual(len(bot.parse_feed(xml, READER)[1]), 1)
+
     def test_ignores_junk_items(self):
         xml = feed(
             item("Recommendation1", "&lt;Recommendation id=1&gt;", ""),
@@ -134,7 +147,7 @@ class CollectTest(unittest.TestCase):
         state = {"readers": {}}
         self.collect(state)
         seen = state["readers"]["96005733"]["seen"]
-        seen.remove("Review8940644436")
+        seen.remove("Review8940644436=5")
         seen.remove("ReadStatus11418184814")
         events, _ = self.collect(state)
         self.assertEqual([e.guid for e in events], ["Review8940644436", "ReadStatus11418184814"])
@@ -146,6 +159,22 @@ class CollectTest(unittest.TestCase):
         events, _ = self.collect(state)
         self.assertEqual([e.kind for e in events], [])  # the only "finished" is 3 days old
         self.assertEqual(len(state["readers"]["96005733"]["seen"]), 7)
+
+    def rating_feed(self, rating):
+        return feed(item("Review1", "Sam added 'Dune'", BOOK.format(verb=f"Sam gave {rating} stars to", after="")))
+
+    def test_rerating_posts_again_but_resaving_does_not(self):
+        state = {"readers": {"96005733": {"seen": ["Review1=4"]}}}
+        self.assertEqual(self.collect(state, self.rating_feed(4), NOW), ([], 0))
+        events, _ = self.collect(state, self.rating_feed(3.5), NOW)
+        self.assertEqual([e.rating for e in events], [3.5])
+
+    def test_legacy_state_only_covers_whole_star_ratings(self):
+        # Before ratings were keyed by score, state.json held bare guids.
+        state = {"readers": {"96005733": {"seen": ["Review1"]}}}
+        self.assertEqual(self.collect(state, self.rating_feed(3), NOW), ([], 0))
+        events, _ = self.collect(state, self.rating_feed(3.5), NOW)
+        self.assertEqual([e.rating for e in events], [3.5])
 
     def test_feed_failure_keeps_going(self):
         with mock.patch.object(bot, "fetch", side_effect=OSError("boom")):
@@ -162,6 +191,13 @@ class EmbedTest(unittest.TestCase):
         self.assertIn("Robert Jackson Bennett", embed["description"])
         self.assertTrue(embed["thumbnail"]["url"].startswith("https://"))
         json.dumps(embed)  # must be serialisable
+
+    def test_stars(self):
+        self.assertEqual(bot.stars(5.0), "★★★★★")
+        self.assertEqual(bot.stars(3.0), "★★★☆☆")
+        self.assertEqual(bot.stars(3.5), "★★★½☆ (3.5)")
+        self.assertEqual(bot.stars(3.75), "★★★¾☆ (3.75)")
+        self.assertEqual(bot.stars(4.25), "★★★★¼ (4.25)")
 
 
 class MainTest(unittest.TestCase):

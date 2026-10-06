@@ -102,10 +102,26 @@ class Event:
     book_url: str | None = None
     author: str | None = None
     cover_url: str | None = None
-    rating: int | None = None
+    rating: float | None = None  # Goodreads allows quarter stars, e.g. 3.75
     progress: str | None = None
     review: str | None = None
     link: str | None = None
+
+    @property
+    def key(self) -> str:
+        """What state.json remembers. Goodreads re-sends the same rating item
+        (same guid) when someone changes their rating, so the score is part of
+        the key and a re-rate counts as a new event."""
+        if self.kind == "rated" and self.rating:
+            return f"{self.guid}={self.rating:g}"
+        return self.guid
+
+    def seen_in(self, seen: list[str]) -> bool:
+        if self.key in seen:
+            return True
+        # State written before ratings were keyed by score holds bare guids, and
+        # back then only whole-star ratings could be parsed (and posted).
+        return self.kind == "rated" and self.guid in seen and float(self.rating or 0).is_integer()
 
 
 def _strip_tags(text: str) -> str:
@@ -196,14 +212,16 @@ def parse_feed(xml_text: str, reader: Reader) -> tuple[str, list[Event]]:
             if m:
                 event.progress = re.sub(r"\s+(with|of)$", "", " ".join(m.group(1).split()))
         elif kind == "rated":
-            m = re.search(r"gave (\d) stars?", desc)
-            event.rating = int(m.group(1)) if m else None
+            m = re.search(r"gave (\d+(?:\.\d+)?) stars?", desc)
+            event.rating = float(m.group(1)) if m else None
             # Anything after the author link is the written review (if there is one).
             m = re.search(r'class="authorName"[^>]*>.*?</a>(.*)', desc, re.S)
             review = _strip_tags(m.group(1)) if m else ""
             event.review = review or None
             if not event.rating and not event.review:
                 continue  # plain "added" with no rating/review duplicates the shelf event
+        if any(e.key == event.key for e in events):
+            continue  # Goodreads sometimes lists the same update twice
         events.append(event)
     return name, events
 
@@ -224,8 +242,12 @@ def fetch(url: str, retries: int = 3) -> str:
 # --------------------------------------------------------------------------- discord
 
 
-def stars(rating: int) -> str:
-    return "★" * rating + "☆" * (5 - rating)
+def stars(rating: float) -> str:
+    """★★★½☆ (3.5) - Unicode has no partial stars, so fractions use ¼ ½ ¾."""
+    whole = int(rating)
+    fraction = {0.25: "¼", 0.5: "½", 0.75: "¾"}.get(round(rating - whole, 2), "")
+    text = "★" * whole + fraction + "☆" * (5 - whole - bool(fraction))
+    return text if rating.is_integer() else f"{text} ({rating:g})"
 
 
 def build_embed(event: Event) -> dict:
@@ -326,16 +348,16 @@ def collect_new_events(config: Config, state: dict, now: datetime) -> tuple[list
 
         known = state["readers"].get(reader.user_id)
         if known is None:
-            remember(state, reader.user_id, [e.guid for e in events])
+            remember(state, reader.user_id, [e.key for e in events])
             print(f"+ {name}: new reader, seeded {len(events)} existing events (not posted)")
             continue
 
         fresh = [
             e for e in events
-            if e.guid not in known["seen"] and e.kind in config.events and e.published >= cutoff
+            if not e.seen_in(known["seen"]) and e.kind in config.events and e.published >= cutoff
         ]
         # Filtered-out events count as seen so they never get posted later.
-        remember(state, reader.user_id, [e.guid for e in events if e not in fresh])
+        remember(state, reader.user_id, [e.key for e in events if e not in fresh])
         print(f"· {name}: {len(fresh)} new")
         new_events.extend(fresh)
     new_events.sort(key=lambda e: e.published)
@@ -384,7 +406,7 @@ def main(argv: list[str] | None = None) -> int:
             post_to_discord(webhook, embeds, config)
         if state is not None:
             for e in batch:
-                remember(state, e.reader_id, [e.guid])
+                remember(state, e.reader_id, [e.key])
             if not args.dry_run:
                 save_state(args.state, state)  # save per batch so a mid-run failure doesn't repost
     if state is not None and not args.dry_run:
