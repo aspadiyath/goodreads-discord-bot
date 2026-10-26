@@ -6,6 +6,7 @@ Post your friend group's Goodreads activity into a Discord channel.
 > **Sam made progress on** *Dune* — 📖 on page 120 of 412
 > **Sam finished reading** *Dune*
 > **Sam rated** *Dune* — ★★★★☆ *"Loved the sand."*
+> **Sam shared a quote** from *Dune* — *"Fear is the mind-killer."*
 
 - **No server needed.** A GitHub Actions workflow checks everyone's feed every hour.
 - **No Goodreads API key.** It reads each person's public updates RSS feed.
@@ -83,7 +84,7 @@ You can change these in the `[settings]` section of `config.toml`:
 
 | Setting | Default | What it does |
 |---|---|---|
-| `events` | all five | Which kinds of event to post: `started`, `progress`, `finished`, `rated`, `want` |
+| `events` | all six | Which kinds of event to post: `started`, `progress`, `finished`, `rated`, `want`, `quote` |
 | `max_age_days` | `3` | Events older than this are never posted, so there's no backlog after a pause |
 | `bot_username` / `bot_avatar_url` | webhook's own | Overrides the name and avatar shown in Discord |
 
@@ -106,7 +107,7 @@ python3 -m unittest discover -s tests          # run the tests
 - **Scheduling delays.** GitHub may start scheduled runs a few minutes late, or skip some when it's busy.
 - **Actions minutes.** Public repos get Actions minutes free. Private repos get 2,000 free minutes a month, and an hourly run uses about 720 of them.
 - **Public repos go idle.** GitHub pauses scheduled workflows in public repos after 60 days with no activity. The bot's own state commits count as activity, so this only happens if nobody reads anything for two months.
-- **Items that aren't posted:** Goodreads recommendations, follows, and "added a book" entries that have no rating or review.
+- **Items that aren't posted:** Goodreads recommendations, follows, giveaway entries, and "added a book" entries that have no rating or review.
 
 ## License
 

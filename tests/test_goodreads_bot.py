@@ -106,6 +106,56 @@ class ParseFeedTest(unittest.TestCase):
         self.assertEqual(bot.parse_feed(xml, READER)[1], [])
 
 
+QUOTE_FEED = (Path(__file__).parent / "fixtures" / "quote_feed.xml").read_text()
+QUOTE_PAGE = """<meta content='A quote from The City &amp; The City' property='og:title'>
+<meta content='https://www.goodreads.com/book/show/40212456-the-city-the-city' property='og:see_also'>"""
+
+
+class QuoteTest(unittest.TestCase):
+    def test_real_quote(self):
+        _, events = bot.parse_feed(QUOTE_FEED, READER)
+        quote = events[0]
+        self.assertEqual(quote.kind, "quote")
+        self.assertEqual(
+            quote.quote,
+            "The aim of a PhD’s to ensure that no one, including your advisor, "
+            "understands what you’re doing after the first couple of years.",
+        )
+        self.assertEqual(quote.author, "China Miéville")
+        self.assertEqual(quote.note, "ded")
+        self.assertEqual(quote.link, "https://www.goodreads.com/quotes/12357143")
+        self.assertNotIn("_SX98_", quote.cover_url)
+        # The giveaway entry in the same feed is ignored.
+        self.assertNotIn("GiveawayRequest900325534", [e.guid for e in events])
+
+    def test_long_quote_uses_full_text_and_no_note(self):
+        desc = (
+            '<span class="quoteText">“<span id="freeTextContainer1">Short…</span>'
+            '<span id="freeText1" style="display:none">The whole<br />thing.</span>”</span> — '
+            '<a href="/author/quotes/1.Frank_Herbert">Frank Herbert</a>'
+        )
+        _, [event] = bot.parse_feed(feed(item("UserQuote1", "Sam liked a quote by Frank Herbert", desc)), READER)
+        self.assertEqual(event.quote, "The whole\nthing.")
+        self.assertIsNone(event.note)
+
+    def test_book_lookup(self):
+        _, events = bot.parse_feed(QUOTE_FEED, READER)
+        with mock.patch.object(bot, "fetch", return_value=QUOTE_PAGE):
+            bot.add_quote_book(events[0])
+        self.assertEqual(events[0].book_title, "The City & The City")
+        self.assertEqual(events[0].book_url, "https://www.goodreads.com/book/show/40212456-the-city-the-city")
+
+    def test_embed_without_book_lookup(self):
+        _, events = bot.parse_feed(QUOTE_FEED, READER)
+        with mock.patch.object(bot, "fetch", side_effect=OSError("down")):
+            bot.add_quote_book(events[0])  # must not raise
+        embed = bot.build_embed(events[0])
+        self.assertEqual(embed["author"]["name"], "Aadarsh shared a quote")
+        self.assertEqual(embed["title"], "A quote by China Miéville")
+        self.assertIn("> The aim of a PhD", embed["description"])
+        self.assertIn("💬 **Aadarsh:** ded", embed["description"])
+
+
 class ConfigTest(unittest.TestCase):
     def test_parse_user_id(self):
         for value in (

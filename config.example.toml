@@ -9,7 +9,8 @@
 #   finished - "Sam finished reading Dune"
 #   rated    - star ratings and written reviews
 #   want     - "Sam wants to read Dune" (added to their to-read shelf)
-events = ["started", "progress", "finished", "rated", "want"]
+#   quote    - quotes they share from a book, with any note they added
+events = ["started", "progress", "finished", "rated", "want", "quote"]
 
 # Never post anything older than this many days (guards against a backlog
 # being dumped into the channel if the bot has been paused for a while).

@@ -28,7 +28,7 @@ GOODREADS = "https://www.goodreads.com"
 FEED_URL = GOODREADS + "/user/updates_rss/{user_id}"
 USER_AGENT = "goodreads-discord-bot/1.0 (+https://github.com)"
 
-ALL_EVENTS = ("started", "progress", "finished", "rated", "want")
+ALL_EVENTS = ("started", "progress", "finished", "rated", "want", "quote")
 EVENT_STYLE = {
     # kind: (verb shown in the embed header, embed color)
     "started": ("started reading", 0x3B82F6),
@@ -36,6 +36,7 @@ EVENT_STYLE = {
     "finished": ("finished reading", 0x22C55E),
     "rated": ("rated", 0xF59E0B),
     "want": ("wants to read", 0x94A3B8),
+    "quote": ("shared a quote", 0x14B8A6),
 }
 SEEN_LIMIT = 200  # guids remembered per reader; the feed itself only holds ~10 items
 
@@ -105,6 +106,8 @@ class Event:
     rating: float | None = None  # Goodreads allows quarter stars, e.g. 3.75
     progress: str | None = None
     review: str | None = None
+    quote: str | None = None
+    note: str | None = None  # what the reader wrote when sharing a quote
     link: str | None = None
 
     @property
@@ -155,7 +158,73 @@ def classify(guid: str, title: str) -> str | None:
         return "progress"
     elif guid.startswith("Review"):
         return "rated"
+    elif guid.startswith("UserQuote"):
+        return "quote"
     return None
+
+
+def _parse_quote(desc: str) -> dict:
+    """Pull the quote text, its author, the reader's note and a cover out of a UserQuote item."""
+    def find(pattern: str) -> str | None:
+        m = re.search(pattern, desc, re.S)
+        return _strip_tags(m.group(1)) or None if m else None
+
+    # Long quotes come as a truncated "freeTextContainer" plus the full text in a hidden "freeText" span.
+    quote = (
+        find(r'<span id="freeText\d+"[^>]*>(.*?)</span>')
+        or find(r'<span id="freeTextContainer\d+"[^>]*>(.*?)</span>')
+        or find(r'class="quoteText"[^>]*>(.*?)</span>')
+    )
+    img = re.search(r'<img[^>]*\bsrc="([^"]+)"', desc)
+    return {
+        "quote": quote.strip("“”\"\n ") if quote else None,
+        "author": find(r'href="[^"]*/author/quotes/[^"]*"[^>]*>(.*?)</a>'),
+        "note": find(r"""class=['"]quoteNote['"][^>]*>(.*?)</div>"""),
+        "cover_url": _large_cover(img.group(1)) if img else None,
+    }
+
+
+def _parse_book_event(desc: str, title: str, common: dict) -> Event | None:
+    """Parse a shelf / progress / rating item. None means "not worth posting"."""
+    kind = common["kind"]
+
+    def find(pattern: str) -> str | None:
+        m = re.search(pattern, desc, re.S)
+        return _strip_tags(m.group(1)) if m else None
+
+    book_href = re.search(r'href="([^"]*/book/show/[^"]+)"', desc)
+    img = re.search(r'<img[^>]*\balt="([^"]*)"[^>]*\bsrc="([^"]+)"', desc)
+    book_title = find(r'class="bookTitle"[^>]*>(.*?)</a>') or find(r'href="[^"]*/book/show/[^"]*"[^>]*>([^<]+)</a>')
+    author = find(r'class="authorName"[^>]*>(.*?)</a>')
+    if img and " by " in img.group(1):
+        alt_title, _, alt_author = html.unescape(img.group(1)).rpartition(" by ")
+        book_title = book_title or alt_title
+        author = author or alt_author
+    if not book_title:
+        m = re.search(r"'(.+)'$", title)
+        book_title = m.group(1) if m else title
+
+    event = Event(
+        book_title=book_title,
+        book_url=_absolute(book_href.group(1)) if book_href else None,
+        author=author,
+        cover_url=_large_cover(img.group(2)) if img else None,
+        **common,
+    )
+    if kind == "progress":
+        m = re.search(r"\bis (.+?)\s*<a[^>]*/book/show/", desc, re.S)
+        if m:
+            event.progress = re.sub(r"\s+(with|of)$", "", " ".join(m.group(1).split()))
+    elif kind == "rated":
+        m = re.search(r"gave (\d+(?:\.\d+)?) stars?", desc)
+        event.rating = float(m.group(1)) if m else None
+        # Anything after the author link is the written review (if there is one).
+        m = re.search(r'class="authorName"[^>]*>.*?</a>(.*)', desc, re.S)
+        review = _strip_tags(m.group(1)) if m else ""
+        event.review = review or None
+        if not event.rating and not event.review:
+            return None  # plain "added" with no rating/review duplicates the shelf event
+    return event
 
 
 def parse_feed(xml_text: str, reader: Reader) -> tuple[str, list[Event]]:
@@ -177,53 +246,55 @@ def parse_feed(xml_text: str, reader: Reader) -> tuple[str, list[Event]]:
         desc = item.findtext("description") or ""
         if kind == "progress":
             desc = html.unescape(desc)
+        common = {
+            "guid": guid,
+            "kind": kind,
+            "reader_name": name,
+            "reader_id": reader.user_id,
+            "published": parsedate_to_datetime(item.findtext("pubDate").strip()),
+            "link": (item.findtext("link") or "").strip() or None,
+        }
 
-        def find(pattern: str) -> str | None:
-            m = re.search(pattern, desc, re.S)
-            return _strip_tags(m.group(1)) if m else None
-
-        book_href = re.search(r'href="([^"]*/book/show/[^"]+)"', desc)
-        img = re.search(r'<img[^>]*\balt="([^"]*)"[^>]*\bsrc="([^"]+)"', desc)
-        book_title = find(r'class="bookTitle"[^>]*>(.*?)</a>') or find(r'href="[^"]*/book/show/[^"]*"[^>]*>([^<]+)</a>')
-        author = find(r'class="authorName"[^>]*>(.*?)</a>')
-        if img and " by " in img.group(1):
-            alt_title, _, alt_author = html.unescape(img.group(1)).rpartition(" by ")
-            book_title = book_title or alt_title
-            author = author or alt_author
-        if not book_title:
-            m = re.search(r"'(.+)'$", title)
-            book_title = m.group(1) if m else title
-
-        event = Event(
-            guid=guid,
-            kind=kind,
-            reader_name=name,
-            reader_id=reader.user_id,
-            published=parsedate_to_datetime(item.findtext("pubDate").strip()),
-            book_title=book_title,
-            book_url=_absolute(book_href.group(1)) if book_href else None,
-            author=author,
-            cover_url=_large_cover(img.group(2)) if img else None,
-            link=(item.findtext("link") or "").strip() or None,
-        )
-
-        if kind == "progress":
-            m = re.search(r"\bis (.+?)\s*<a[^>]*/book/show/", desc, re.S)
-            if m:
-                event.progress = re.sub(r"\s+(with|of)$", "", " ".join(m.group(1).split()))
-        elif kind == "rated":
-            m = re.search(r"gave (\d+(?:\.\d+)?) stars?", desc)
-            event.rating = float(m.group(1)) if m else None
-            # Anything after the author link is the written review (if there is one).
-            m = re.search(r'class="authorName"[^>]*>.*?</a>(.*)', desc, re.S)
-            review = _strip_tags(m.group(1)) if m else ""
-            event.review = review or None
-            if not event.rating and not event.review:
-                continue  # plain "added" with no rating/review duplicates the shelf event
+        if kind == "quote":
+            # The feed doesn't name the book; add_quote_book() fills it in before posting.
+            event = Event(book_title="", **common, **_parse_quote(desc))
+            if not event.quote:
+                continue
+        else:
+            event = _parse_book_event(desc, title, common)
+            if event is None:
+                continue
         if any(e.key == event.key for e in events):
             continue  # Goodreads sometimes lists the same update twice
         events.append(event)
     return name, events
+
+
+def _meta(page: str, prop: str) -> str | None:
+    for tag in re.findall(r"<meta\b[^>]*>", page):
+        if re.search(rf"""property=['"]{re.escape(prop)}['"]""", tag):
+            m = re.search(r"""content=(['"])(.*?)\1""", tag, re.S)
+            if m:
+                return html.unescape(m.group(2))
+    return None
+
+
+def add_quote_book(event: Event) -> None:
+    """Fill in which book a quote is from, using the quote's own page. Best effort."""
+    if not event.link:
+        return
+    try:
+        page = fetch(event.link)
+    except Exception as err:
+        print(f"! couldn't look up the book for quote {event.link} ({err})", file=sys.stderr)
+        return
+    title = _meta(page, "og:title") or ""
+    if title.startswith("A quote from "):
+        event.book_title = title.removeprefix("A quote from ").strip()
+    book_url = _meta(page, "og:see_also") or ""
+    if "/book/show/" in book_url:
+        event.book_url = book_url
+    event.cover_url = event.cover_url or _meta(page, "og:image")
 
 
 def fetch(url: str, retries: int = 3) -> str:
@@ -252,6 +323,8 @@ def stars(rating: float) -> str:
 
 def build_embed(event: Event) -> dict:
     verb, color = EVENT_STYLE[event.kind]
+    if event.kind == "quote":
+        return _quote_embed(event, verb, color)
     lines = []
     if event.author:
         lines.append(f"by **{event.author}**")
@@ -278,6 +351,27 @@ def build_embed(event: Event) -> dict:
         embed["url"] = event.book_url
     if lines:
         embed["description"] = "\n".join(lines)
+    if event.cover_url:
+        embed["thumbnail"] = {"url": event.cover_url}
+    return embed
+
+
+def _quote_embed(event: Event, verb: str, color: int) -> dict:
+    quote = event.quote if len(event.quote) <= 1500 else event.quote[:1500].rstrip() + "…"
+    lines = ["> " + quote.replace("\n", "\n> ")]
+    if event.author:
+        lines.append(f"— **{event.author}**")
+    if event.note:
+        lines.append(f"\n💬 **{event.reader_name}:** {event.note}")
+    embed = {
+        "author": {"name": f"{event.reader_name} {verb}", "url": f"{GOODREADS}/user/show/{event.reader_id}"},
+        "title": (event.book_title or f"A quote by {event.author or 'someone'}")[:256],
+        "description": "\n".join(lines),
+        "color": color,
+        "timestamp": event.published.astimezone(timezone.utc).isoformat(),
+    }
+    if event.link:
+        embed["url"] = event.link
     if event.cover_url:
         embed["thumbnail"] = {"url": event.cover_url}
     return embed
@@ -395,6 +489,10 @@ def main(argv: list[str] | None = None) -> int:
     else:
         state = load_state(args.state)
         events, failures = collect_new_events(config, state, datetime.now(timezone.utc))
+
+    for event in events:
+        if event.kind == "quote":
+            add_quote_book(event)
 
     # Discord allows up to 10 embeds per message.
     for i in range(0, len(events), 10):
