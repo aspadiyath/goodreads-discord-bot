@@ -323,14 +323,23 @@ def shelf_events(
 
     The updates widget leaves some activity out (and is empty for some privacy
     settings), so the shelf widget fills the gaps.
+
+    The widget doesn't always return the same number of books, so a longer page
+    can show older books we never recorded. The shelf is newest first, so only
+    books above the newest one we've seen are new; below that, only re-ratings
+    count. With no shelf history at all, nothing is new.
     """
+    seen_ids = {k.split(":", 1)[1].split("=", 1)[0] for k in seen if k.startswith("shelf:")}
+    newest_seen = next((i for i, b in enumerate(shelf) if b.review_id in seen_ids), 0)
     covered = {e.book_id for e in updates if e.kind in ("finished", "rated")} - {None}
     covered_titles = {_norm_title(e.book_title) for e in updates if e.kind in ("finished", "rated")}
     events = []
-    for book in shelf:
+    for i, book in enumerate(shelf):
         if shelf_key(book) in seen or book.book_id in covered or _norm_title(book.title) in covered_titles:
             continue
-        rerated = any(k.startswith(f"shelf:{book.review_id}=") for k in seen)
+        rerated = book.review_id in seen_ids
+        if not rerated and i >= newest_seen:
+            continue
         events.append(Event(
             key=shelf_key(book),
             kind="rated" if rerated else "finished",

@@ -215,12 +215,23 @@ class CollectTest(unittest.TestCase):
         self.assertEqual([(e.kind, e.rating) for e in events], [("rated", 3.0)])
 
     def test_empty_updates_widget_falls_back_to_shelf(self):
-        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": ["shelf:8969193595=1.5"]}}}
+        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": ["shelf:8940644436=5"]}}}
         events, _ = self.collect(state, updates=EMPTY_UPDATES)
         self.assertEqual([e.book_title.split(" (")[0] for e in events],
-                         ["Steering The Craft: A Twenty-First-Century Guide to Sailing the Sea of Story",
-                          "A Drop of Corruption", "A Trade of Blood", "The Lion’s Tusk"])
-        self.assertEqual(events[0].rating, None)  # finished but unrated
+                         ["A Trade of Blood", "The House in the Cerulean Sea",
+                          "The Lion’s Tusk"])
+
+    def test_older_shelf_books_on_a_longer_page_are_not_new(self):
+        # Seeded when the widget returned 1 book; now it returns 5 and the other 4 are older
+        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": ["shelf:8996678277=3"]}}}
+        events, _ = self.collect(state, updates=EMPTY_UPDATES)
+        self.assertEqual(events, [])
+        self.assertEqual(len(state["readers"]["96005733"]["seen"]), 5)
+
+    def test_no_shelf_history_posts_nothing_from_the_shelf(self):
+        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": []}}}
+        events, _ = self.collect(state, updates=EMPTY_UPDATES)
+        self.assertEqual(events, [])
 
     def test_disabled_and_stale_events_are_marked_seen_not_posted(self):
         self.config.events = ("started", "quote")
@@ -314,14 +325,14 @@ class MainTest(unittest.TestCase):
             tmp = Path(tmp)
             (tmp / "config.toml").write_text('[settings]\nmax_age_days = 3650\n[[readers]]\ngoodreads = "96005733"\n')
             state = tmp / "state.json"
-            state.write_text(json.dumps({"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": []}}}))
+            state.write_text(json.dumps({"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": ["shelf:8927966371=0"]}}}))
             posted = []
             with mock.patch.object(bot, "fetch", side_effect=fake_fetch()), \
                  mock.patch.object(bot, "post_to_discord", side_effect=lambda url, embeds, cfg: posted.append(embeds)), \
                  mock.patch.dict("os.environ", {"DISCORD_WEBHOOK_URL": "https://example.invalid"}):
                 self.assertEqual(bot.main(["--config", str(tmp / "config.toml"), "--state", str(state)]), 0)
-                # 10 updates + 4 shelf books the updates widget doesn't mention, in 2 messages
-                self.assertEqual([len(batch) for batch in posted], [10, 4])
+                # 10 updates + 3 newer shelf books the updates widget doesn't mention, in 2 messages
+                self.assertEqual([len(batch) for batch in posted], [10, 3])
                 self.assertEqual(len(json.loads(state.read_text())["readers"]["96005733"]["seen"]), 15)
                 posted.clear()
                 bot.main(["--config", str(tmp / "config.toml"), "--state", str(state)])
