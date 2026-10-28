@@ -2,6 +2,7 @@ import json
 import sys
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 from unittest import mock
@@ -284,6 +285,19 @@ class EmbedTest(unittest.TestCase):
         with mock.patch.object(bot, "fetch", side_effect=OSError("down")):
             bot.add_quote_book(quote)  # must not raise
         self.assertEqual(bot.build_embed(quote)["title"], "A quote by China Miéville")
+
+    def test_same_book_cards_go_in_separate_messages(self):
+        page = (
+            update_block("October 27", "rated a book", book_id="9", stars=star_fills(10, 10, 10, 10, 0))
+            + update_block("October 27", "Sam started reading", book_id="2", title="Emma")
+            + update_block("October 27", "Sam has read", book_id="9")
+        )
+        _, events = bot.parse_updates_widget(page, READER, TODAY)
+        events.reverse()  # oldest first, as posted: finished, started, rated
+        batches = bot.batch_events(events)
+        self.assertEqual([[e.kind for e in b] for b in batches], [["finished", "started"], ["rated"]])
+        distinct = [replace(events[1], book_id=str(i)) for i in range(14)]
+        self.assertEqual([len(b) for b in bot.batch_events(distinct)], [10, 4])  # at most 10 per message
 
     def test_stars(self):
         self.assertEqual(bot.stars(5.0), "★★★★★")

@@ -454,6 +454,25 @@ def _quote_embed(event: Event, verb: str, color: int) -> dict:
     return embed
 
 
+def batch_events(events: list[Event]) -> list[list[Event]]:
+    """Group events into Discord messages of up to 10 embeds.
+
+    Discord merges embeds that share a url into one card (that's how its image
+    galleries work), so e.g. "finished" and "rated" for the same book must go
+    in separate messages or the second one disappears.
+    """
+    batches: list[list[Event]] = []
+    urls: set = set()
+    for event in events:
+        url = build_embed(event).get("url")
+        if not batches or len(batches[-1]) == 10 or (url and url in urls):
+            batches.append([])
+            urls = set()
+        batches[-1].append(event)
+        urls.add(url)
+    return batches
+
+
 def post_to_discord(webhook_url: str, embeds: list[dict], config: Config) -> None:
     payload: dict = {"embeds": embeds, "allowed_mentions": {"parse": []}}
     if config.bot_username:
@@ -593,9 +612,7 @@ def main(argv: list[str] | None = None) -> int:
         if event.kind == "quote":
             add_quote_book(event)
 
-    # Discord allows up to 10 embeds per message.
-    for i in range(0, len(events), 10):
-        batch = events[i : i + 10]
+    for batch in batch_events(events):
         embeds = [build_embed(e) for e in batch]
         if args.dry_run:
             print(json.dumps(embeds, indent=2, ensure_ascii=False))
