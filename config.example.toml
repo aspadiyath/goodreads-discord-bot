@@ -5,11 +5,11 @@
 [settings]
 # Which kinds of activity to post. Remove any you find too noisy.
 #   started  - "Sam started reading Dune"
-#   progress - "Sam is on page 120 of 412" / "Sam is 50% done"
+#   progress - reading progress ("50% done"); not in Goodreads' widgets, so currently never posted
 #   finished - "Sam finished reading Dune"
 #   rated    - star ratings and written reviews
 #   want     - "Sam wants to read Dune" (added to their to-read shelf)
-#   quote    - quotes they share from a book, with any note they added
+#   quote    - quotes they share from a book
 events = ["started", "progress", "finished", "rated", "want", "quote"]
 
 # Never post anything older than this many days (guards against a backlog
@@ -21,9 +21,8 @@ max_age_days = 3
 # bot_avatar_url = "https://example.com/avatar.png"
 
 # One [[readers]] block per person. `goodreads` can be the numeric user id or
-# any Goodreads profile / RSS URL, e.g. https://www.goodreads.com/user/show/1-otis
-# Their profile must be public. `name` is optional (defaults to their
-# Goodreads first name).
+# any Goodreads profile URL, e.g. https://www.goodreads.com/user/show/1-otis
+# `name` is optional (defaults to the name on their Goodreads profile).
 
 [[readers]]
 name = "Otis"

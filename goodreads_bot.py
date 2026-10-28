@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Post Goodreads activity (started / finished / progress / ratings) to a Discord channel.
+"""Post Goodreads activity (started / finished / ratings / quotes) to a Discord channel.
 
-Reads each reader's public Goodreads updates RSS feed, figures out which
-events are new since the last run (tracked in state.json), and posts them to
-a Discord webhook as embeds. Standard library only, Python 3.11+.
+Reads each reader's public Goodreads widgets, figures out which events are
+new since the last run (tracked in state.json), and posts them to a Discord
+webhook as embeds. Standard library only, Python 3.11+.
 """
 
 from __future__ import annotations
@@ -18,16 +18,20 @@ import time
 import tomllib
 import urllib.error
 import urllib.request
-import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from email.utils import parsedate_to_datetime
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 GOODREADS = "https://www.goodreads.com"
-FEED_URL = GOODREADS + "/user/updates_rss/{user_id}"
+UPDATES_URL = GOODREADS + "/widgets/user_update_widget?num_updates=20&user={user_id}"
+# The shelf widget ignores its query options and always returns the reader's
+# recent "read" books (5-30 of them, depending on their saved widget settings).
+SHELF_URL = GOODREADS + "/review/custom_widget/{user_id}.read?num_books=30&shelf=read"
+STATE_VERSION = 2  # 1 = RSS guids (before Goodreads removed RSS)
 USER_AGENT = "goodreads-discord-bot/1.0 (+https://github.com)"
 
+# "progress" is still accepted in config.toml, but the widgets don't include
+# progress updates, so nothing is posted for it at the moment.
 ALL_EVENTS = ("started", "progress", "finished", "rated", "want", "quote")
 EVENT_STYLE = {
     # kind: (verb shown in the embed header, embed color)
@@ -38,7 +42,7 @@ EVENT_STYLE = {
     "want": ("wants to read", 0x94A3B8),
     "quote": ("shared a quote", 0x14B8A6),
 }
-SEEN_LIMIT = 200  # guids remembered per reader; the feed itself only holds ~10 items
+SEEN_LIMIT = 300  # keys remembered per reader: ~20 updates + up to 30 shelf entries per run
 
 
 # --------------------------------------------------------------------------- config
@@ -60,8 +64,13 @@ class Config:
 
 
 def parse_user_id(value: str | int) -> str:
-    """Accept a bare id, '96005733-name', or any goodreads profile/feed URL."""
-    match = re.search(r"(\d+)", str(value).rsplit("/", 1)[-1]) or re.search(r"(\d+)", str(value))
+    """Accept a bare id, '96005733-name', or any goodreads profile/feed/widget URL."""
+    value = str(value)
+    match = (
+        re.search(r"[?&]user=(\d+)", value)
+        or re.search(r"(\d+)", value.split("?")[0].rsplit("/", 1)[-1])
+        or re.search(r"(\d+)", value)
+    )
     if not match:
         raise ValueError(f"can't find a Goodreads user id in {value!r}")
     return match.group(1)
@@ -89,21 +98,29 @@ def load_config(path: Path) -> Config:
     )
 
 
-# --------------------------------------------------------------------------- feed parsing
+# --------------------------------------------------------------------------- widget parsing
+#
+# Goodreads removed its public RSS feeds in October 2026, so the bot reads the
+# two embeddable widgets instead. Both work without signing in:
+#   * the updates widget - what someone did (started / finished / rated /
+#     wants to read / shared a quote), at most ~11 updates, dated by day only;
+#   * the shelf widget - their most recent "read" books with exact ratings,
+#     including half and quarter stars, and stable review ids.
 
 
 @dataclass
 class Event:
-    guid: str
+    key: str  # what state.json remembers so the event is only posted once
     kind: str
     reader_name: str
     reader_id: str
-    published: datetime
+    day: date
     book_title: str
-    book_url: str | None = None
+    book_id: str | None = None
     author: str | None = None
     cover_url: str | None = None
     rating: float | None = None  # Goodreads allows quarter stars, e.g. 3.75
+    rating_approx: bool = False  # only the updates widget's lossy star fill was available
     progress: str | None = None
     review: str | None = None
     quote: str | None = None
@@ -111,20 +128,18 @@ class Event:
     link: str | None = None
 
     @property
-    def key(self) -> str:
-        """What state.json remembers. Goodreads re-sends the same rating item
-        (same guid) when someone changes their rating, so the score is part of
-        the key and a re-rate counts as a new event."""
-        if self.kind == "rated" and self.rating:
-            return f"{self.guid}={self.rating:g}"
-        return self.guid
+    def book_url(self) -> str | None:
+        return f"{GOODREADS}/book/show/{self.book_id}" if self.book_id else None
 
-    def seen_in(self, seen: list[str]) -> bool:
-        if self.key in seen:
-            return True
-        # State written before ratings were keyed by score holds bare guids, and
-        # back then only whole-star ratings could be parsed (and posted).
-        return self.kind == "rated" and self.guid in seen and float(self.rating or 0).is_integer()
+
+@dataclass
+class ShelfBook:
+    review_id: str
+    title: str
+    book_id: str | None
+    author: str | None
+    rating: float
+    cover_url: str | None
 
 
 def _strip_tags(text: str) -> str:
@@ -133,141 +148,203 @@ def _strip_tags(text: str) -> str:
     return re.sub(r"[ \t]+", " ", re.sub(r"\n\s*\n+", "\n\n", text)).strip()
 
 
-def _absolute(url: str | None) -> str | None:
-    if not url:
-        return None
-    return url if url.startswith("http") else GOODREADS + url
-
-
 def _large_cover(url: str | None) -> str | None:
     # Goodreads serves thumbnails like "12345._SY75_.jpg"; dropping the size suffix gives full size.
     return re.sub(r"\._S[XY]\d+_(?=\.)", "", url) if url else None
 
 
-def classify(guid: str, title: str) -> str | None:
-    """Map a feed item to one of ALL_EVENTS, or None for items we ignore."""
-    if guid.startswith("ReadStatus"):
-        # Goodreads words the same event differently depending on how it was logged.
-        if " started reading " in title or " is currently reading " in title:
-            return "started"
-        if " finished reading " in title or " has read " in title:
-            return "finished"
-        if " wants to read " in title:
-            return "want"
-    elif guid.startswith("UserStatus"):
-        return "progress"
-    elif guid.startswith("Review"):
-        return "rated"
-    elif guid.startswith("UserQuote"):
-        return "quote"
+def _norm_title(title: str) -> str:
+    return re.sub(r"\s*\(.*$", "", html.unescape(title)).strip().casefold()
+
+
+def _parse_day(label: str, today: date) -> date | None:
+    """'October 26' (this year) or 'August 24, 2025'."""
+    label = " ".join(label.split())
+    try:
+        return datetime.strptime(label, "%B %d, %Y").date()
+    except ValueError:
+        pass
+    for year in (today.year, today.year - 1):  # "December 30" seen in early January is last year's
+        try:
+            parsed = datetime.strptime(f"{label}, {year}", "%B %d, %Y").date()
+        except ValueError:
+            return None
+        if parsed <= today + timedelta(days=1):
+            return parsed
     return None
 
 
-def _parse_quote(desc: str) -> dict:
-    """Pull the quote text, its author, the reader's note and a cover out of a UserQuote item."""
+_UPDATE_BLOCK = re.compile(r'<div class="update(?:\s[^"]*)?"\s*>')
+
+
+def _update_kind(action: str) -> str | None:
+    if "rated a book" in action:
+        return "rated"
+    # Goodreads words the same event differently depending on how it was logged.
+    if "started reading" in action or "is currently reading" in action:
+        return "started"
+    if "finished reading" in action or "has read" in action:
+        return "finished"
+    if "wants to read" in action:
+        return "want"
+    return None
+
+
+def parse_updates_widget(page: str, reader: Reader, today: date) -> tuple[str, list[Event]]:
+    """Return (display name, events newest-first) from a user_update_widget page."""
+    m = re.search(r'class="gr_reviewer_name">\s*<a[^>]*>(.*?)</a>', page, re.S)
+    name = reader.name or (_strip_tags(m.group(1)) if m else "") or reader.user_id
+
+    events: list[Event] = []
+    day = None
+    for block in _UPDATE_BLOCK.split(page)[1:]:
+        # Only the first update of each day carries the date.
+        m = re.match(r"\s*<p>([^<]+)</p>", block)
+        if m:
+            day = _parse_day(m.group(1), today) or day
+        if day is None:
+            continue
+        event = _parse_update(block, name, reader.user_id, day)
+        if event and all(e.key != event.key for e in events):  # Goodreads sometimes lists an update twice
+            events.append(event)
+    return name, events
+
+
+def _parse_update(block: str, name: str, reader_id: str, day: date) -> Event | None:
     def find(pattern: str) -> str | None:
-        m = re.search(pattern, desc, re.S)
-        return _strip_tags(m.group(1)) or None if m else None
+        m = re.search(pattern, block, re.S)
+        return (_strip_tags(m.group(1)) or None) if m else None
 
-    # Long quotes come as a truncated "freeTextContainer" plus the full text in a hidden "freeText" span.
-    quote = (
-        find(r'<span id="freeText\d+"[^>]*>(.*?)</span>')
-        or find(r'<span id="freeTextContainer\d+"[^>]*>(.*?)</span>')
-        or find(r'class="quoteText"[^>]*>(.*?)</span>')
-    )
-    img = re.search(r'<img[^>]*\bsrc="([^"]+)"', desc)
-    return {
-        "quote": quote.strip("“”\"\n ") if quote else None,
-        "author": find(r'href="[^"]*/author/quotes/[^"]*"[^>]*>(.*?)</a>'),
-        "note": find(r"""class=['"]quoteNote['"][^>]*>(.*?)</div>"""),
-        "cover_url": _large_cover(img.group(1)) if img else None,
-    }
+    common = {"reader_name": name, "reader_id": reader_id, "day": day}
 
+    quote_id = re.search(r'href="/quotes/(\d+)[^"]*"[^>]*>\s*quote\s*</a>', block)
+    if quote_id:
+        quote = find(r'class="quoteText"[^>]*>(.*?)</span>')
+        if not quote:
+            return None
+        return Event(
+            key=f"quote:{quote_id.group(1)}",
+            kind="quote",
+            book_title="",  # the widget doesn't name the book; add_quote_book() fills it in
+            quote=quote.strip("“”\"\n "),
+            author=find(r'href="/author/quotes/[^"]*"[^>]*>(.*?)</a>'),
+            link=f"{GOODREADS}/quotes/{quote_id.group(1)}",
+            **common,
+        )
 
-def _parse_book_event(desc: str, title: str, common: dict) -> Event | None:
-    """Parse a shelf / progress / rating item. None means "not worth posting"."""
-    kind = common["kind"]
-
-    def find(pattern: str) -> str | None:
-        m = re.search(pattern, desc, re.S)
-        return _strip_tags(m.group(1)) if m else None
-
-    book_href = re.search(r'href="([^"]*/book/show/[^"]+)"', desc)
-    img = re.search(r'<img[^>]*\balt="([^"]*)"[^>]*\bsrc="([^"]+)"', desc)
-    book_title = find(r'class="bookTitle"[^>]*>(.*?)</a>') or find(r'href="[^"]*/book/show/[^"]*"[^>]*>([^<]+)</a>')
-    author = find(r'class="authorName"[^>]*>(.*?)</a>')
-    if img and " by " in img.group(1):
-        alt_title, _, alt_author = html.unescape(img.group(1)).rpartition(" by ")
-        book_title = book_title or alt_title
-        author = author or alt_author
-    if not book_title:
-        m = re.search(r"'(.+)'$", title)
-        book_title = m.group(1) if m else title
-
+    m = re.search(r'<div class="updateAction">(.*?)class="bookTitle"', block, re.S)
+    kind = _update_kind(" ".join(_strip_tags(m.group(1)).split())) if m else None
+    book = re.search(r'class="bookTitle"[^>]*href="/book/show/(\d+)[^"]*"[^>]*>(.*?)</a>', block, re.S)
+    if not kind or not book:
+        return None  # follows, likes, giveaways, ...
+    cover = re.search(r'<img[^>]*\bsrc="([^"]+/books/[^"]+)"', block)
     event = Event(
-        book_title=book_title,
-        book_url=_absolute(book_href.group(1)) if book_href else None,
-        author=author,
-        cover_url=_large_cover(img.group(2)) if img else None,
+        key=f"{kind}:{book.group(1)}:{day.isoformat()}",
+        kind=kind,
+        book_title=_strip_tags(book.group(2)),
+        book_id=book.group(1),
+        author=find(r'class="authorName"[^>]*>(.*?)</a>'),
+        cover_url=_large_cover(cover.group(1)) if cover else None,
         **common,
     )
-    if kind == "progress":
-        m = re.search(r"\bis (.+?)\s*<a[^>]*/book/show/", desc, re.S)
-        if m:
-            event.progress = re.sub(r"\s+(with|of)$", "", " ".join(m.group(1).split()))
-    elif kind == "rated":
-        m = re.search(r"gave (\d+(?:\.\d+)?) stars?", desc)
-        event.rating = float(m.group(1)) if m else None
-        # Anything after the author link is the written review (if there is one).
-        m = re.search(r'class="authorName"[^>]*>.*?</a>(.*)', desc, re.S)
-        review = _strip_tags(m.group(1)) if m else ""
-        event.review = review or None
-        if not event.rating and not event.review:
-            return None  # plain "added" with no rating/review duplicates the shelf event
+
+    # Long reviews come as a truncated "freeTextContainer" plus the full text in a hidden "freeText" span.
+    review = re.search(r'id="freeTextreview(\d+)"[^>]*>(.*?)</span>', block, re.S) or re.search(
+        r'id="freeTextContainerreview(\d+)"[^>]*>(.*?)</span>', block, re.S
+    )
+    if review:
+        event.review = _strip_tags(review.group(2)) or None
+        event.link = f"{GOODREADS}/review/show/{review.group(1)}"
+
+    if kind == "rated":
+        # Each star is drawn filled 0-10. The partial fill can't tell 2.5 from 2.75,
+        # so this is replaced by the shelf widget's exact rating when possible.
+        fills = [int(p) for p in re.findall(r'class="staticStar p(\d+)"', block)]
+        if not any(fills):
+            return None
+        whole = sum(f == 10 for f in fills)
+        partial = any(0 < f < 10 for f in fills)
+        event.rating = whole + (0.5 if partial else 0)
+        event.rating_approx = partial
     return event
 
 
-def parse_feed(xml_text: str, reader: Reader) -> tuple[str, list[Event]]:
-    """Return (display name, events newest-first) for one reader's updates feed."""
-    channel = ET.fromstring(xml_text).find("channel")
-    if channel is None:
-        raise ValueError("not an RSS feed")
-    feed_title = channel.findtext("title") or ""
-    name = reader.name or re.sub(r"'s Updates$", "", feed_title).strip() or reader.user_id
+def parse_shelf_widget(js: str) -> list[ShelfBook]:
+    """Parse the custom_widget script: the reader's recent "read" books, newest first."""
+    m = re.search(r"var widget_code = '(.*?)'\n", js, re.S)
+    if not m:
+        raise ValueError("unexpected shelf widget format")
+    code = re.sub(r"\\(.)", lambda e: {"n": "\n", "t": "\t"}.get(e.group(1), e.group(1)), m.group(1))
+    star_value = {"active": 1.0, "75pct": 0.75, "50pct": 0.5, "25pct": 0.25, "inactive": 0.0}
 
-    events = []
-    for item in channel.findall("item"):
-        guid = (item.findtext("guid") or "").strip()
-        title = " ".join((item.findtext("title") or "").split())
-        kind = classify(guid, title)
-        if not guid or not kind:
+    books = []
+    for entry in code.split('class="gr_custom_each_container_"')[1:]:
+        review_id = re.search(r"/review/show/(\d+)", entry)
+        title = re.search(r'<a title="([^"]+)"', entry)
+        if not review_id or not title:
             continue
-        # Progress updates double-escape their HTML, so unescape once before matching.
-        desc = item.findtext("description") or ""
-        if kind == "progress":
-            desc = html.unescape(desc)
-        common = {
-            "guid": guid,
-            "kind": kind,
-            "reader_name": name,
-            "reader_id": reader.user_id,
-            "published": parsedate_to_datetime(item.findtext("pubDate").strip()),
-            "link": (item.findtext("link") or "").strip() or None,
-        }
+        cover = re.search(r'<img[^>]*\bsrc="([^"]+)"', entry)
+        book_id = re.search(r"/books/\d+\w/(\d+)\.", cover.group(1)) if cover else None
+        author = re.search(r'class="gr_custom_author_">.*?<a[^>]*>(.*?)</a>', entry, re.S)
+        rating = re.search(r'class="gr_custom_rating_">(.*?)</div>', entry, re.S)
+        books.append(ShelfBook(
+            review_id=review_id.group(1),
+            title=html.unescape(title.group(1)),
+            book_id=book_id.group(1) if book_id else None,
+            author=_strip_tags(author.group(1)) if author else None,
+            rating=sum(star_value.get(s, 0) for s in re.findall(r"gr_flat_red_star_(\w+?)\.png", rating.group(1)))
+            if rating else 0.0,
+            cover_url=_large_cover(cover.group(1)) if cover and "/books/" in cover.group(1) else None,
+        ))
+    return books
 
-        if kind == "quote":
-            # The feed doesn't name the book; add_quote_book() fills it in before posting.
-            event = Event(book_title="", **common, **_parse_quote(desc))
-            if not event.quote:
-                continue
-        else:
-            event = _parse_book_event(desc, title, common)
-            if event is None:
-                continue
-        if any(e.key == event.key for e in events):
-            continue  # Goodreads sometimes lists the same update twice
-        events.append(event)
-    return name, events
+
+def apply_shelf_ratings(events: list[Event], shelf: list[ShelfBook]) -> None:
+    """Swap the updates widget's approximate star fill for the shelf widget's exact rating."""
+    for event in events:
+        if event.kind != "rated":
+            continue
+        match = next((b for b in shelf if event.book_id and b.book_id == event.book_id), None) or next(
+            (b for b in shelf if _norm_title(b.title) == _norm_title(event.book_title)), None
+        )
+        if match and match.rating:
+            event.rating, event.rating_approx = match.rating, False
+            event.link = event.link or f"{GOODREADS}/review/show/{match.review_id}"
+
+
+def shelf_key(book: ShelfBook) -> str:
+    return f"shelf:{book.review_id}={book.rating:g}"
+
+
+def shelf_events(
+    shelf: list[ShelfBook], updates: list[Event], name: str, reader_id: str, seen: list[str], today: date
+) -> list[Event]:
+    """New or re-rated "read" books that the updates widget doesn't mention.
+
+    The updates widget leaves some activity out (and is empty for some privacy
+    settings), so the shelf widget fills the gaps.
+    """
+    covered = {e.book_id for e in updates if e.kind in ("finished", "rated")} - {None}
+    covered_titles = {_norm_title(e.book_title) for e in updates if e.kind in ("finished", "rated")}
+    events = []
+    for book in shelf:
+        if shelf_key(book) in seen or book.book_id in covered or _norm_title(book.title) in covered_titles:
+            continue
+        rerated = any(k.startswith(f"shelf:{book.review_id}=") for k in seen)
+        events.append(Event(
+            key=shelf_key(book),
+            kind="rated" if rerated else "finished",
+            reader_name=name,
+            reader_id=reader_id,
+            day=today,
+            book_title=book.title,
+            book_id=book.book_id,
+            author=book.author,
+            cover_url=book.cover_url,
+            rating=book.rating or None,
+            link=f"{GOODREADS}/review/show/{book.review_id}",
+        ))
+    return events
 
 
 def _meta(page: str, prop: str) -> str | None:
@@ -291,9 +368,9 @@ def add_quote_book(event: Event) -> None:
     title = _meta(page, "og:title") or ""
     if title.startswith("A quote from "):
         event.book_title = title.removeprefix("A quote from ").strip()
-    book_url = _meta(page, "og:see_also") or ""
-    if "/book/show/" in book_url:
-        event.book_url = book_url
+    book = re.search(r"/book/show/(\d+)", _meta(page, "og:see_also") or "")
+    if book:
+        event.book_id = book.group(1)
     event.cover_url = event.cover_url or _meta(page, "og:image")
 
 
@@ -313,11 +390,13 @@ def fetch(url: str, retries: int = 3) -> str:
 # --------------------------------------------------------------------------- discord
 
 
-def stars(rating: float) -> str:
+def stars(rating: float, approx: bool = False) -> str:
     """★★★½☆ (3.5) - Unicode has no partial stars, so fractions use ¼ ½ ¾."""
     whole = int(rating)
     fraction = {0.25: "¼", 0.5: "½", 0.75: "¾"}.get(round(rating - whole, 2), "")
     text = "★" * whole + fraction + "☆" * (5 - whole - bool(fraction))
+    if approx:
+        return f"{text} (between {whole + 0.25:g} and {whole + 0.75:g})"
     return text if rating.is_integer() else f"{text} ({rating:g})"
 
 
@@ -331,7 +410,7 @@ def build_embed(event: Event) -> dict:
     if event.progress:
         lines.append(f"📖 {event.progress}")
     if event.rating:
-        lines.append(stars(event.rating))
+        lines.append(stars(event.rating, event.rating_approx))
     if event.review:
         review = event.review if len(event.review) <= 600 else event.review[:600].rstrip() + "…"
         lines.append("> " + review.replace("\n", "\n> "))
@@ -345,7 +424,6 @@ def build_embed(event: Event) -> dict:
         },
         "title": event.book_title[:256],
         "color": color,
-        "timestamp": event.published.astimezone(timezone.utc).isoformat(),
     }
     if event.book_url:
         embed["url"] = event.book_url
@@ -368,7 +446,6 @@ def _quote_embed(event: Event, verb: str, color: int) -> dict:
         "title": (event.book_title or f"A quote by {event.author or 'someone'}")[:256],
         "description": "\n".join(lines),
         "color": color,
-        "timestamp": event.published.astimezone(timezone.utc).isoformat(),
     }
     if event.link:
         embed["url"] = event.link
@@ -405,56 +482,75 @@ def post_to_discord(webhook_url: str, embeds: list[dict], config: Config) -> Non
 
 
 def load_state(path: Path) -> dict:
-    if path.exists():
-        return json.loads(path.read_text())
-    return {"readers": {}}
+    state = json.loads(path.read_text()) if path.exists() else {}
+    if state.get("version") != STATE_VERSION:
+        if state.get("readers"):
+            # Old RSS ids can't be matched against widget updates, so start
+            # everyone fresh: current activity is recorded, not posted.
+            print("State is from the RSS version of the bot; re-seeding every reader.")
+        state = {"version": STATE_VERSION, "readers": {}}
+    return state
 
 
 def save_state(path: Path, state: dict) -> None:
     path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n")
 
 
-def remember(state: dict, reader_id: str, guids: list[str]) -> None:
+def remember(state: dict, reader_id: str, keys: list[str]) -> None:
     entry = state["readers"].setdefault(reader_id, {"seen": []})
-    seen = [g for g in guids if g not in entry["seen"]] + entry["seen"]
+    seen = [k for k in dict.fromkeys(keys) if k not in entry["seen"]] + entry["seen"]
     entry["seen"] = seen[:SEEN_LIMIT]
 
 
 # --------------------------------------------------------------------------- main
 
 
-def collect_new_events(config: Config, state: dict, now: datetime) -> tuple[list[Event], int]:
-    """Fetch every feed; return (unseen events oldest-first, number of failed feeds).
+def fetch_reader(reader: Reader, today: date) -> tuple[str, list[Event], list[ShelfBook]]:
+    name, events = parse_updates_widget(fetch(UPDATES_URL.format(user_id=reader.user_id)), reader, today)
+    try:
+        shelf = parse_shelf_widget(fetch(SHELF_URL.format(user_id=reader.user_id)))
+    except Exception as err:  # ratings fall back to the approximate star fill
+        print(f"! {name}: couldn't read shelf widget ({err})", file=sys.stderr)
+        shelf = []
+    apply_shelf_ratings(events, shelf)
+    return name, events, shelf
 
-    Readers we have never seen before are "seeded": their current feed is
+
+def collect_new_events(config: Config, state: dict, today: date) -> tuple[list[Event], int]:
+    """Fetch every reader; return (unseen events oldest-first, number of failed readers).
+
+    Readers we have never seen before are "seeded": their current activity is
     marked as seen without posting, so adding a friend doesn't dump their
     history into the channel.
     """
     new_events, failures = [], 0
-    cutoff = now - timedelta(days=config.max_age_days)
+    cutoff = today - timedelta(days=config.max_age_days)
     for reader in config.readers:
         try:
-            name, events = parse_feed(fetch(FEED_URL.format(user_id=reader.user_id)), reader)
-        except Exception as err:  # one broken/private feed shouldn't block everyone else
-            print(f"! {reader.name or reader.user_id}: couldn't read feed ({err})", file=sys.stderr)
+            name, events, shelf = fetch_reader(reader, today)
+        except Exception as err:  # one broken reader shouldn't block everyone else
+            print(f"! {reader.name or reader.user_id}: couldn't read updates ({err})", file=sys.stderr)
             failures += 1
             continue
 
+        all_keys = [e.key for e in events] + [shelf_key(b) for b in shelf]
         known = state["readers"].get(reader.user_id)
         if known is None:
-            remember(state, reader.user_id, [e.key for e in events])
-            print(f"+ {name}: new reader, seeded {len(events)} existing events (not posted)")
+            remember(state, reader.user_id, all_keys)
+            print(f"+ {name}: new reader, seeded {len(events)} updates and {len(shelf)} shelf books (not posted)")
             continue
 
+        events = shelf_events(shelf, events, name, reader.user_id, known["seen"], today) + events
         fresh = [
             e for e in events
-            if not e.seen_in(known["seen"]) and e.kind in config.events and e.published >= cutoff
+            if e.key not in known["seen"] and e.kind in config.events and e.day >= cutoff
         ]
-        # Filtered-out events count as seen so they never get posted later.
-        remember(state, reader.user_id, [e.key for e in events if e not in fresh])
+        # Everything not about to be posted counts as seen, so it never gets posted later.
+        fresh_keys = {e.key for e in fresh}
+        remember(state, reader.user_id, [k for k in all_keys if k not in fresh_keys])
         print(f"· {name}: {len(fresh)} new")
-        new_events.extend(fresh)
-    new_events.sort(key=lambda e: e.published)
+        new_events.extend(reversed(fresh))  # widgets list newest first
+    new_events.sort(key=lambda e: e.day)  # stable, so same-day events keep their order
     return new_events, failures
 
 
@@ -478,17 +574,20 @@ def main(argv: list[str] | None = None) -> int:
         print("DISCORD_WEBHOOK_URL is not set (add it as a repository secret).", file=sys.stderr)
         return 1
 
+    today = datetime.now(timezone.utc).date()
     if args.replay:
         events = []
         for reader in config.readers:
-            _, feed = parse_feed(fetch(FEED_URL.format(user_id=reader.user_id)), reader)
-            events.extend([e for e in feed if e.kind in config.events][: args.replay])
-        events.sort(key=lambda e: e.published)
+            name, updates, shelf = fetch_reader(reader, today)
+            if not updates:
+                updates = shelf_events(shelf, [], name, reader.user_id, [], today)
+            events.extend(reversed([e for e in updates if e.kind in config.events][: args.replay]))
+        events.sort(key=lambda e: e.day)
         failures = 0
         state = None
     else:
         state = load_state(args.state)
-        events, failures = collect_new_events(config, state, datetime.now(timezone.utc))
+        events, failures = collect_new_events(config, state, today)
 
     for event in events:
         if event.kind == "quote":

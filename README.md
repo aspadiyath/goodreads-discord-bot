@@ -3,22 +3,21 @@
 Post your friend group's Goodreads activity into a Discord channel.
 
 > **Sam started reading** *Dune* — by **Frank Herbert**
-> **Sam made progress on** *Dune* — 📖 on page 120 of 412
 > **Sam finished reading** *Dune*
 > **Sam rated** *Dune* — ★★★★☆ *"Loved the sand."*
 > **Sam shared a quote** from *Dune* — *"Fear is the mind-killer."*
 
 - **No server needed.** A GitHub Actions workflow checks everyone's feed every hour.
-- **No Goodreads API key.** It reads each person's public updates RSS feed.
+- **No Goodreads API key.** It reads the public widgets Goodreads offers for embedding on blogs.
 - **No dependencies.** It's one Python file that uses only the standard library.
 
 ## How it works
 
-1. Every hour, the workflow fetches `goodreads.com/user/updates_rss/<id>` for each person in `config.toml`.
+1. Every hour, the workflow fetches two Goodreads widgets for each person in `config.toml`: the **updates widget** (what they started, finished, rated, shelved or quoted) and the **shelf widget** (their recently read books with exact ratings, including half and quarter stars).
 2. It posts any events it hasn't seen before to your Discord webhook as embeds with book covers.
 3. It records the IDs of events it has already posted in `state.json`, and the workflow commits that file back to the repo.
 
-The first time the bot sees a new person, it marks their current feed as already posted instead of posting it. Adding a friend won't flood the channel with their history.
+The first time the bot sees a new person, it marks their current activity as already posted instead of posting it. Adding a friend won't flood the channel with their history.
 
 ## Setup (about 5 minutes)
 
@@ -70,13 +69,13 @@ name = "Sam"
 goodreads = "12345678"
 ```
 
-Each person's Goodreads profile must be public. Commit and push `config.toml`.
+Commit and push `config.toml`. The widgets work even for profiles restricted to signed-in Goodreads users, but some privacy settings hide a person's updates; for them, the bot can only post books they finish (from their shelf).
 
 ### 4. Turn it on
 
 1. Go to the **Actions** tab. On a fork, click **I understand my workflows, go ahead and enable them**.
 2. Open **Check Goodreads feeds → Run workflow** and set **replay** to `2`. This posts each person's two most recent events, so you can check that the webhook works.
-3. Run it again with replay set to `0`. This first normal run marks everyone's current feed as posted. From then on, the bot only posts new activity.
+3. Run it again with replay set to `0`. This first normal run marks everyone's current activity as posted. From then on, the bot only posts new activity.
 
 ## Configuration
 
@@ -84,7 +83,7 @@ You can change these in the `[settings]` section of `config.toml`:
 
 | Setting | Default | What it does |
 |---|---|---|
-| `events` | all six | Which kinds of event to post: `started`, `progress`, `finished`, `rated`, `want`, `quote` |
+| `events` | all | Which kinds of event to post: `started`, `finished`, `rated`, `want`, `quote` (`progress` is accepted but currently never posted; see below) |
 | `max_age_days` | `3` | Events older than this are never posted, so there's no backlog after a pause |
 | `bot_username` / `bot_avatar_url` | webhook's own | Overrides the name and avatar shown in Discord |
 
@@ -103,11 +102,16 @@ python3 -m unittest discover -s tests          # run the tests
 
 ## Limitations
 
-- **Short feeds.** Goodreads updates feeds only hold about the last 10 items per person. If someone logs more than 10 updates between checks, the older ones are missed. With hourly checks this rarely happens.
+- **Goodreads removed its RSS feeds** in October 2026, so the bot reads the embeddable widgets instead. They're less detailed:
+  - **No reading progress.** "50% done" and "on page 120" updates aren't in the widgets, so `progress` posts nothing for now.
+  - **Dates, not times.** Updates are dated by day only, so cards don't show a time.
+  - **Short history.** The updates widget holds about the last 11 updates per person. If someone logs more than that between hourly checks, the older ones are missed.
+  - **Approximate partial stars as a fallback.** The updates widget can't tell 2.5 from 2.75 stars, so exact ratings come from the shelf widget. If a book isn't there, the card shows a range like "between 3.25 and 3.75".
+  - **No notes on shared quotes.** The quote, its author and its book are posted, but the note the person added isn't in the widget.
 - **Scheduling delays.** GitHub may start scheduled runs a few minutes late, or skip some when it's busy.
 - **Actions minutes.** Public repos get Actions minutes free. Private repos get 2,000 free minutes a month, and an hourly run uses about 720 of them.
 - **Public repos go idle.** GitHub pauses scheduled workflows in public repos after 60 days with no activity. The bot's own state commits count as activity, so this only happens if nobody reads anything for two months.
-- **Items that aren't posted:** Goodreads recommendations, follows, giveaway entries, and "added a book" entries that have no rating or review.
+- **Items that aren't posted:** follows, friendships, likes, giveaway entries and Goodreads news posts.
 
 ## License
 
