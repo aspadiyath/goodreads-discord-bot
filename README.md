@@ -3,9 +3,13 @@
 Post your friend group's Goodreads activity into a Discord channel.
 
 > **Sam started reading** *Dune* — by **Frank Herbert**
+>
 > **Sam made progress on** *Dune* — 📖 on page 120 of 412 · 💬 *"The spice must flow"*
+>
 > **Sam finished reading** *Dune*
+>
 > **Sam rated** *Dune* — ★★★★☆ *"Loved the sand."*
+>
 > **Sam shared a quote** from *Dune* — *"Fear is the mind-killer."*
 
 - **No server needed.** A GitHub Actions workflow checks everyone's feed every hour.
