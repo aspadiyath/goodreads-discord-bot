@@ -3,7 +3,7 @@ import sys
 import tempfile
 import unittest
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from unittest import mock
 
@@ -16,6 +16,9 @@ UPDATES_OTIS = (FIXTURES / "updates_otis.html").read_text()
 UPDATES_ELIZABETH = (FIXTURES / "updates_elizabeth.html").read_text()
 SHELF = (FIXTURES / "shelf_aadarsh.js").read_text()
 SHELF_OTIS = (FIXTURES / "shelf_otis.js").read_text()
+FEED = (FIXTURES / "feed_aadarsh.html").read_text()
+FEED_OTIS = (FIXTURES / "feed_otis.html").read_text()
+STATUS = (FIXTURES / "status_aadarsh.html").read_text()
 EMPTY_UPDATES = (
     '<div class="goodreads_container" id="gr_reviews_widget"><div class="gr_reviews_header">'
     '<div class="gr_reviewer_name"><a href="/user/show/7-roy">Roy</a></div></div>'
@@ -28,8 +31,13 @@ READER = bot.Reader("96005733")
 TODAY = date(2026, 10, 27)
 
 
-def fake_fetch(updates=UPDATES, shelf=SHELF):
+def fake_fetch(updates=UPDATES, shelf=SHELF, feed="", status=""):
+    """By default the profile feed is empty, so updates come from the widget fallback."""
     def fetch(url):
+        if "delayable_user_show" in url:
+            return feed
+        if "user_status" in url:
+            return status
         if "user_update_widget" in url:
             return updates
         if "custom_widget" in url:
@@ -129,6 +137,85 @@ class UpdatesWidgetTest(unittest.TestCase):
 
     def test_empty_widget(self):
         self.assertEqual(self.parse(EMPTY_UPDATES, bot.Reader("7")), ("Roy", []))
+
+
+def feed_row(stamp, action, body="", book_id="1", title="Dune"):
+    return (
+        f"<tr class='update' data-timestamp='{stamp}' id='update_1'><td><div class='updateAction'>"
+        f"<strong><a href=\"/user/show/96005733-aadarsh\">Aadarsh</a></strong> {action}</div>"
+        f"<div class='updateBodyAfterImage'><a class=\"bookTitle\" href=\"/book/show/{book_id}-x\">{title}</a>"
+        f"<a class=\"authorName\" href=\"/author/show/1\">Frank Herbert</a>{body}</div></td></tr>"
+    )
+
+
+class ProfileFeedTest(unittest.TestCase):
+    def parse(self, page=FEED, reader=READER):
+        return bot.parse_profile_feed(page, reader)
+
+    def test_real_feed(self):
+        name, events = self.parse()
+        self.assertEqual(name, "Aadarsh")
+        self.assertEqual([e.kind for e in events], ["want"] * 4 + ["quote", "started", "rated"] + ["want"] * 3)
+        started = events[5]
+        self.assertEqual(started.book_title, "The City & The City")
+        self.assertEqual(started.time, datetime(2026, 10, 17, 10, 9, tzinfo=bot.PACIFIC))
+        self.assertEqual(started.time.utcoffset().total_seconds(), -7 * 3600)  # daylight time
+        self.assertEqual(events[0].time.utcoffset().total_seconds(), -8 * 3600)  # Nov 1: standard time
+        self.assertNotIn("_SY75_", started.cover_url)
+
+    def test_keys_match_the_updates_widget(self):
+        # so switching sources doesn't repost anything
+        widget_keys = {e.key for e in bot.parse_updates_widget(UPDATES, READER, TODAY)[1]}
+        feed = self.parse()[1]
+        # The widget fixture is from Oct 27: everything in the feed up to then is in it, by the same key.
+        self.assertEqual({e.key for e in feed if e.day <= TODAY} - widget_keys, set())
+        self.assertEqual(len(widget_keys & {e.key for e in feed}), 6)
+
+    def test_quote_with_book_and_note(self):
+        quote = self.parse()[1][4]
+        self.assertEqual(quote.key, "quote:12357143")
+        self.assertTrue(quote.quote.startswith("The aim of a PhD’s"))
+        self.assertEqual((quote.book_title, quote.book_id), ("The City & The City", "40212456"))
+        self.assertEqual((quote.author, quote.note), ("China Miéville", "ded"))
+
+    def test_partial_star_fill_is_approximate(self):
+        rated = self.parse()[1][6]
+        self.assertEqual((rated.rating, rated.rating_approx), (3.5, True))
+
+    def test_ignores_likes_comments_and_follows(self):
+        name, events = self.parse(FEED_OTIS, bot.Reader("1"))
+        self.assertEqual(name, "Otis Chandler")
+        self.assertEqual([e.kind for e in events], ["want"] * 4)
+
+    def test_review_preview(self):
+        body = (
+            "<span id='reviewTextContainer42' style=''>&quot;Loved the sand.<br/><br/>And the wor&quot;"
+            '<a class="readMoreLink actionLink" href="/review/show/42">Read more of this review »</a></span>'
+        )
+        page = "Recent Updates" + feed_row("October 27, 2026 08:00", "rated a book " + star_fills(10, 10, 10, 10, 0), body)
+        rated = self.parse(page)[1][0]
+        self.assertEqual((rated.rating, rated.review), (4, "Loved the sand.\n\nAnd the wor…"))
+        self.assertEqual(rated.link, "https://www.goodreads.com/review/show/42")
+
+    def test_rejects_page_without_updates(self):
+        with self.assertRaises(ValueError):
+            self.parse("<!-- empty -->")
+
+
+class StatusPageTest(unittest.TestCase):
+    def test_real_status_page(self):
+        events = bot.parse_status_page(STATUS, "Aadarsh", "96005733")
+        self.assertEqual(len(events), 30)
+        first = events[0]
+        self.assertEqual((first.key, first.kind, first.progress), ("progress:1342530609", "progress", "76% done"))
+        self.assertEqual(first.book_title, "The House in the Cerulean Sea (Cerulean Chronicles, #1)")
+        self.assertEqual(first.time, datetime(2026, 9, 30, 10, 12, tzinfo=bot.PACIFIC))
+        self.assertEqual(first.book_id, "45047384")
+        self.assertIn("on page 182 of 352", [e.progress for e in events])
+        self.assertIn('"FARMERS?? FROM MINNESOTA??" 🤣', [e.note for e in events])
+
+    def test_private_or_empty_page(self):
+        self.assertEqual(bot.parse_status_page("<html></html>", "Roy", "7"), [])
 
 
 class ShelfWidgetTest(unittest.TestCase):
@@ -250,6 +337,44 @@ class CollectTest(unittest.TestCase):
         events, _ = self.collect(state, shelf="<html>oops</html>")
         self.assertEqual([(e.rating, e.rating_approx) for e in events], [(3.5, True)])
 
+    def test_profile_feed_is_preferred_over_the_widget(self):
+        state = {"version": bot.STATE_VERSION, "readers": {}}
+        self.collect(state, feed=FEED)
+        seen = state["readers"]["96005733"]["seen"]
+        self.assertIn("want:288680:2026-11-01", seen)  # only in the feed
+        seen.remove("want:288680:2026-11-01")
+        self.config.max_age_days = 3650
+        events, _ = self.collect(state, feed=FEED)
+        self.assertEqual([e.book_title for e in events], ["The Truth (Discworld, #25; Industrial Revolution, #2)"])
+        self.assertIsNotNone(events[0].time)
+
+    def test_progress_is_recorded_first_then_posted(self):
+        self.config.max_age_days = 60
+        # a reader seeded before progress support existed
+        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": ["shelf:8996678277=3"]}}}
+        events, _ = self.collect(state, status=STATUS, updates=EMPTY_UPDATES)
+        self.assertEqual(events, [])
+        entry = state["readers"]["96005733"]
+        self.assertTrue(entry["progress_seeded"])
+        entry["seen"].remove("progress:1342530609")
+        events, _ = self.collect(state, status=STATUS, updates=EMPTY_UPDATES)
+        self.assertEqual([(e.kind, e.progress) for e in events], [("progress", "76% done")])
+
+    def test_status_page_failure_doesnt_mark_progress_seeded(self):
+        state = {"version": bot.STATE_VERSION, "readers": {}}
+        with mock.patch.object(bot, "fetch", side_effect=lambda url: (_ for _ in ()).throw(OSError("down"))
+                               if "user_status" in url else fake_fetch()(url)):
+            bot.collect_new_events(self.config, state, TODAY)
+        self.assertFalse(state["readers"]["96005733"]["progress_seeded"])
+
+    def test_events_are_posted_in_time_order_across_sources(self):
+        self.config.max_age_days = 3650
+        state = {"version": bot.STATE_VERSION, "readers": {"96005733": {"seen": [], "progress_seeded": True}}}
+        events, _ = self.collect(state, feed=FEED, status=STATUS)
+        times = [e.time for e in events if e.time]
+        self.assertEqual(times, sorted(times))
+        self.assertIn("progress", {e.kind for e in events})
+
     def test_reader_failure_keeps_going(self):
         with mock.patch.object(bot, "fetch", side_effect=OSError("boom")):
             events, failures = bot.collect_new_events(self.config, {"readers": {}}, TODAY)
@@ -309,6 +434,22 @@ class EmbedTest(unittest.TestCase):
         self.assertEqual([[e.kind for e in b] for b in batches], [["finished", "started"], ["rated"]])
         distinct = [replace(events[1], book_id=str(i)) for i in range(14)]
         self.assertEqual([len(b) for b in bot.batch_events(distinct)], [10, 4])  # at most 10 per message
+
+    def test_progress_embed(self):
+        progress = bot.parse_status_page(STATUS, "Aadarsh", "96005733")[0]
+        progress.note = "Getting good"
+        embed = bot.build_embed(progress)
+        self.assertEqual(embed["author"]["name"], "Aadarsh made progress on")
+        self.assertIn("📖 76% done", embed["description"])
+        self.assertIn("💬 Getting good", embed["description"])
+        self.assertEqual(embed["timestamp"], "2026-09-30T10:12:00-07:00")
+
+    def test_feed_quote_embed_needs_no_lookup(self):
+        quote = bot.parse_profile_feed(FEED, READER)[1][4]
+        embed = bot.build_embed(quote)
+        self.assertEqual(embed["title"], "The City & The City")
+        self.assertIn("💬 **Aadarsh:** ded", embed["description"])
+        self.assertIn("timestamp", embed)
 
     def test_stars(self):
         self.assertEqual(bot.stars(5.0), "★★★★★")

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Post Goodreads activity (started / finished / ratings / quotes) to a Discord channel.
+"""Post Goodreads activity (started / progress / finished / ratings / quotes) to a Discord channel.
 
-Reads each reader's public Goodreads widgets, figures out which events are
-new since the last run (tracked in state.json), and posts them to a Discord
-webhook as embeds. Standard library only, Python 3.11+.
+Reads each reader's public Goodreads profile feed, reading-status page and
+shelf widget, figures out which events are new since the last run (tracked in
+state.json), and posts them to a Discord webhook as embeds. Standard library
+only, Python 3.11+.
 """
 
 from __future__ import annotations
@@ -19,19 +20,25 @@ import tomllib
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time as dtime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 GOODREADS = "https://www.goodreads.com"
-UPDATES_URL = GOODREADS + "/widgets/user_update_widget?num_updates=20&user={user_id}"
+# The "Recent Updates" section of a profile page, which the page loads separately after it opens.
+FEED_URL = GOODREADS + "/user/delayable_user_show/{user_id}"
+STATUS_URL = GOODREADS + "/user_status/list/{user_id}"  # reading progress
+UPDATES_URL = GOODREADS + "/widgets/user_update_widget?num_updates=20&user={user_id}"  # fallback for the feed
 # The shelf widget ignores its query options and always returns the reader's
 # recent "read" books (5-30 of them, depending on their saved widget settings).
 SHELF_URL = GOODREADS + "/review/custom_widget/{user_id}.read?num_books=30&shelf=read"
 STATE_VERSION = 2  # 1 = RSS guids (before Goodreads removed RSS)
 USER_AGENT = "goodreads-discord-bot/1.0 (+https://github.com)"
+try:
+    PACIFIC = ZoneInfo("America/Los_Angeles")  # Goodreads shows signed-out visitors Pacific time
+except ZoneInfoNotFoundError:  # no tz database installed
+    PACIFIC = timezone(timedelta(hours=-8))
 
-# "progress" is still accepted in config.toml, but the widgets don't include
-# progress updates, so nothing is posted for it at the moment.
 ALL_EVENTS = ("started", "progress", "finished", "rated", "want", "quote")
 EVENT_STYLE = {
     # kind: (verb shown in the embed header, embed color)
@@ -42,7 +49,7 @@ EVENT_STYLE = {
     "want": ("wants to read", 0x94A3B8),
     "quote": ("shared a quote", 0x14B8A6),
 }
-SEEN_LIMIT = 300  # keys remembered per reader: ~20 updates + up to 30 shelf entries per run
+SEEN_LIMIT = 300  # keys remembered per reader: ~10 updates + 30 statuses + up to 30 shelf entries per run
 
 
 # --------------------------------------------------------------------------- config
@@ -98,14 +105,17 @@ def load_config(path: Path) -> Config:
     )
 
 
-# --------------------------------------------------------------------------- widget parsing
+# --------------------------------------------------------------------------- page parsing
 #
-# Goodreads removed its public RSS feeds in October 2026, so the bot reads the
-# two embeddable widgets instead. Both work without signing in:
-#   * the updates widget - what someone did (started / finished / rated /
-#     wants to read / shared a quote), at most ~11 updates, dated by day only;
+# Goodreads removed its public RSS feeds in October 2026, so the bot reads
+# pages that work without signing in:
+#   * the profile feed - what someone did (started / finished / rated / wants
+#     to read / shared a quote), their last 10 updates, with exact times;
+#   * the status page - their reading progress ("is 50% done with ...");
 #   * the shelf widget - their most recent "read" books with exact ratings,
-#     including half and quarter stars, and stable review ids.
+#     including half and quarter stars, and stable review ids;
+#   * the updates widget - like the profile feed but dated by day only, used
+#     when the feed can't be read.
 
 
 @dataclass
@@ -114,7 +124,7 @@ class Event:
     kind: str
     reader_name: str
     reader_id: str
-    day: date
+    day: date  # Pacific, like the dates Goodreads shows
     book_title: str
     book_id: str | None = None
     author: str | None = None
@@ -124,8 +134,9 @@ class Event:
     progress: str | None = None
     review: str | None = None
     quote: str | None = None
-    note: str | None = None  # what the reader wrote when sharing a quote
+    note: str | None = None  # what the reader wrote with a quote or progress update
     link: str | None = None
+    time: datetime | None = None  # exact time, when the source has one
 
     @property
     def book_url(self) -> str | None:
@@ -256,17 +267,150 @@ def _parse_update(block: str, name: str, reader_id: str, day: date) -> Event | N
         event.review = _strip_tags(review.group(2)) or None
         event.link = f"{GOODREADS}/review/show/{review.group(1)}"
 
-    if kind == "rated":
-        # Each star is drawn filled 0-10. The partial fill can't tell 2.5 from 2.75,
-        # so this is replaced by the shelf widget's exact rating when possible.
-        fills = [int(p) for p in re.findall(r'class="staticStar p(\d+)"', block)]
-        if not any(fills):
-            return None
-        whole = sum(f == 10 for f in fills)
-        partial = any(0 < f < 10 for f in fills)
-        event.rating = whole + (0.5 if partial else 0)
-        event.rating_approx = partial
+    if kind == "rated" and not _set_star_rating(event, block):
+        return None
     return event
+
+
+def _set_star_rating(event: Event, html_text: str) -> bool:
+    """Read a rating from the star images. Returns False if there's no rating.
+
+    Each star is drawn filled 0-10. The partial fill can't tell 2.5 from 2.75,
+    so this is replaced by the shelf widget's exact rating when possible.
+    """
+    fills = [int(p) for p in re.findall(r'class="staticStar p(\d+)"', html_text)]
+    if not any(fills):
+        return False
+    whole = sum(f == 10 for f in fills)
+    partial = any(0 < f < 10 for f in fills)
+    event.rating = whole + (0.5 if partial else 0)
+    event.rating_approx = partial
+    return True
+
+
+_FEED_ROW = re.compile(r"<tr class='update' data-timestamp='([^']+)' id='update_\d+'>")
+
+
+def parse_profile_feed(page: str, reader: Reader) -> tuple[str, list[Event]]:
+    """Return (display name, events newest-first) from a profile's Recent Updates section."""
+    if "Recent Updates" not in page:
+        raise ValueError("no Recent Updates section")
+    m = re.search(rf'<a href="/user/show/{reader.user_id}(?:-[^"]*)?">([^<]+)</a>', page)
+    name = reader.name or (" ".join(html.unescape(m.group(1)).split()) if m else "") or reader.user_id
+
+    events: list[Event] = []
+    parts = _FEED_ROW.split(page)
+    for stamp, block in zip(parts[1::2], parts[2::2]):
+        try:
+            when = datetime.strptime(stamp, "%B %d, %Y %H:%M").replace(tzinfo=PACIFIC)
+        except ValueError:
+            continue
+        event = _parse_feed_row(block, name, reader.user_id, when)
+        if event and all(e.key != event.key for e in events):
+            events.append(event)
+    return name, events
+
+
+def _parse_feed_row(block: str, name: str, reader_id: str, when: datetime) -> Event | None:
+    def find(pattern: str, text: str = block) -> str | None:
+        m = re.search(pattern, text, re.S)
+        return (_strip_tags(m.group(1)) or None) if m else None
+
+    action = re.search(r"<div class='updateAction'>(.*?)(?:<div class='quoteNote'>|</div>)", block, re.S)
+    if not action:
+        return None
+    action_html = action.group(1)
+    common = {"reader_name": name, "reader_id": reader_id, "day": when.date(), "time": when}
+    cover = re.search(r'<img[^>]*\bsrc="([^"]+/books/[^"]+)"', block)
+    cover_url = _large_cover(cover.group(1)) if cover else None
+
+    quote_id = re.search(r'href="/quotes/(\d+)[^"]*">\s*quote\s*</a>', action_html)
+    if quote_id:
+        quote = find(r"<span class='quoteText'>(.*?)</span>\s*</span>")
+        if not quote:
+            return None
+        author = find(r'class="quoteAuthor"[^>]*>(.*?)</a>')
+        book_id = re.search(r"data-resource-id='(\d+)' data-resource-type='Book'", block)
+        title = re.search(r'<img alt="([^"]*)"', block) if book_id else None
+        book_title = html.unescape(title.group(1)) if title else ""
+        if author:
+            book_title = book_title.removesuffix(f" by {author}")
+        return Event(
+            key=f"quote:{quote_id.group(1)}",
+            kind="quote",
+            book_title=book_title,
+            book_id=book_id.group(1) if book_id else None,
+            quote=quote.strip("“”\"\n "),
+            author=author,
+            note=find(r"<div class='quoteNote'>(.*?)</div>"),
+            cover_url=cover_url,
+            link=f"{GOODREADS}/quotes/{quote_id.group(1)}",
+            **common,
+        )
+
+    kind = _update_kind(" ".join(_strip_tags(action_html).split()))
+    book = re.search(r'class="bookTitle" href="/book/show/(\d+)[^"]*">(.*?)</a>', block, re.S)
+    if not kind or not book:
+        return None  # follows, likes, comments, progress (read from the status page), ...
+    event = Event(
+        key=f"{kind}:{book.group(1)}:{when.date().isoformat()}",
+        kind=kind,
+        book_title=_strip_tags(book.group(2)),
+        book_id=book.group(1),
+        author=find(r'class="authorName"[^>]*>(.*?)</a>'),
+        cover_url=cover_url,
+        **common,
+    )
+    # The feed only has the start of a review, with a "Read more" link.
+    review = re.search(r"id='reviewTextContainer(\d+)'[^>]*>(.*?)</span>", block, re.S)
+    if review:
+        text, more = re.subn(r'<a class="readMoreLink.*?</a>', "", review.group(2), flags=re.S)
+        text = _strip_tags(text).strip('"“” \n')
+        event.review = (text + "…" if more else text) or None
+        event.link = f"{GOODREADS}/review/show/{review.group(1)}"
+    if kind == "rated" and not _set_star_rating(event, action_html):
+        return None
+    return event
+
+
+_STATUS_BLOCK = re.compile(r'<div id="user_status_(\d+)">')
+
+
+def parse_status_page(page: str, name: str, reader_id: str) -> list[Event]:
+    """Reading-progress updates, newest first, from a /user_status/list page."""
+    events = []
+    parts = _STATUS_BLOCK.split(page)
+    for status_id, block in zip(parts[1::2], parts[2::2]):
+        header = re.search(r'user_status_header">(.*?)</span>', block, re.S)
+        m = header and re.search(
+            r"</a>\s*is\s+(on page \d+ of \d+|\d+% done)\s+(?:of|with)\s*"
+            r'<a href="[^"]*/book/show/(\d+)[^"]*"[^>]*>(.*?)</a>',
+            header.group(1), re.S,
+        )
+        stamp = re.search(rf'href="/user_status/show/{status_id}">([^<]+)</a>', block)
+        if not m or not stamp:
+            continue
+        try:
+            when = datetime.strptime(" ".join(stamp.group(1).split()), "%b %d, %Y %I:%M%p").replace(tzinfo=PACIFIC)
+        except ValueError:
+            continue
+        comment = re.search(r'<div class="readable body">(.*?)</div>', block, re.S)
+        cover = re.search(r'class="left bookCover".*?<img[^>]*\bsrc="([^"]+)"', block, re.S)
+        events.append(Event(
+            key=f"progress:{status_id}",
+            kind="progress",
+            reader_name=name,
+            reader_id=reader_id,
+            day=when.date(),
+            time=when,
+            book_title=_strip_tags(m.group(3)),
+            book_id=m.group(2),
+            progress=m.group(1),
+            note=(_strip_tags(comment.group(1)) or None) if comment else None,
+            cover_url=_large_cover(cover.group(1)) if cover else None,
+            link=f"{GOODREADS}/user_status/show/{status_id}",
+        ))
+    return events
 
 
 def parse_shelf_widget(js: str) -> list[ShelfBook]:
@@ -418,6 +562,9 @@ def build_embed(event: Event) -> dict:
         lines.append(f"by **{event.author}**")
     if event.progress:
         lines.append(f"📖 {event.progress}")
+    if event.note:
+        note = event.note if len(event.note) <= 600 else event.note[:600].rstrip() + "…"
+        lines.append("💬 " + note.replace("\n\n", "\n"))
     if event.rating:
         lines.append(stars(event.rating, event.rating_approx))
     if event.review:
@@ -440,6 +587,8 @@ def build_embed(event: Event) -> dict:
         embed["description"] = "\n".join(lines)
     if event.cover_url:
         embed["thumbnail"] = {"url": event.cover_url}
+    if event.time:
+        embed["timestamp"] = event.time.isoformat()
     return embed
 
 
@@ -460,6 +609,8 @@ def _quote_embed(event: Event, verb: str, color: int) -> dict:
         embed["url"] = event.link
     if event.cover_url:
         embed["thumbnail"] = {"url": event.cover_url}
+    if event.time:
+        embed["timestamp"] = event.time.isoformat()
     return embed
 
 
@@ -533,15 +684,31 @@ def remember(state: dict, reader_id: str, keys: list[str]) -> None:
 # --------------------------------------------------------------------------- main
 
 
-def fetch_reader(reader: Reader, today: date) -> tuple[str, list[Event], list[ShelfBook]]:
-    name, events = parse_updates_widget(fetch(UPDATES_URL.format(user_id=reader.user_id)), reader, today)
+def fetch_reader(reader: Reader, today: date) -> tuple[str, list[Event], list[ShelfBook], list[Event] | None]:
+    """Return (name, updates, shelf books, progress updates or None if the status page failed)."""
+    try:
+        name, events = parse_profile_feed(fetch(FEED_URL.format(user_id=reader.user_id)), reader)
+    except Exception as err:  # empty for some inactive profiles; the widget has the same updates by day
+        print(f"! {reader.name or reader.user_id}: couldn't read profile feed ({err}); using the updates widget",
+              file=sys.stderr)
+        name, events = parse_updates_widget(fetch(UPDATES_URL.format(user_id=reader.user_id)), reader, today)
     try:
         shelf = parse_shelf_widget(fetch(SHELF_URL.format(user_id=reader.user_id)))
     except Exception as err:  # ratings fall back to the approximate star fill
         print(f"! {name}: couldn't read shelf widget ({err})", file=sys.stderr)
         shelf = []
+    try:
+        progress = parse_status_page(fetch(STATUS_URL.format(user_id=reader.user_id)), name, reader.user_id)
+    except Exception as err:
+        print(f"! {name}: couldn't read reading progress ({err})", file=sys.stderr)
+        progress = None
     apply_shelf_ratings(events, shelf)
-    return name, events, shelf
+    return name, events, shelf, progress
+
+
+def _posting_order(event: Event) -> datetime:
+    # Events without a time (shelf books, widget updates) go after the timed ones from their day.
+    return event.time or datetime.combine(event.day, dtime(23, 59), tzinfo=PACIFIC)
 
 
 def collect_new_events(config: Config, state: dict, today: date) -> tuple[list[Event], int]:
@@ -555,20 +722,27 @@ def collect_new_events(config: Config, state: dict, today: date) -> tuple[list[E
     cutoff = today - timedelta(days=config.max_age_days)
     for reader in config.readers:
         try:
-            name, events, shelf = fetch_reader(reader, today)
+            name, events, shelf, progress = fetch_reader(reader, today)
         except Exception as err:  # one broken reader shouldn't block everyone else
             print(f"! {reader.name or reader.user_id}: couldn't read updates ({err})", file=sys.stderr)
             failures += 1
             continue
 
-        all_keys = [e.key for e in events] + [shelf_key(b) for b in shelf]
+        all_keys = [e.key for e in events + (progress or [])] + [shelf_key(b) for b in shelf]
         known = state["readers"].get(reader.user_id)
         if known is None:
             remember(state, reader.user_id, all_keys)
-            print(f"+ {name}: new reader, seeded {len(events)} updates and {len(shelf)} shelf books (not posted)")
+            state["readers"][reader.user_id]["progress_seeded"] = progress is not None
+            print(f"+ {name}: new reader, seeded {len(events)} updates, {len(progress or [])} progress "
+                  f"updates and {len(shelf)} shelf books (not posted)")
             continue
 
         events = shelf_events(shelf, events, name, reader.user_id, known["seen"], today) + events
+        if progress is not None:
+            if known.get("progress_seeded"):
+                events += progress
+            else:  # first run since progress support was added: record it, like a new reader
+                known["progress_seeded"] = True
         fresh = [
             e for e in events
             if e.key not in known["seen"] and e.kind in config.events and e.day >= cutoff
@@ -577,8 +751,8 @@ def collect_new_events(config: Config, state: dict, today: date) -> tuple[list[E
         fresh_keys = {e.key for e in fresh}
         remember(state, reader.user_id, [k for k in all_keys if k not in fresh_keys])
         print(f"· {name}: {len(fresh)} new")
-        new_events.extend(reversed(fresh))  # widgets list newest first
-    new_events.sort(key=lambda e: e.day)  # stable, so same-day events keep their order
+        new_events.extend(reversed(fresh))  # pages list newest first
+    new_events.sort(key=_posting_order)  # stable, so untimed same-day events keep their order
     return new_events, failures
 
 
@@ -602,15 +776,16 @@ def main(argv: list[str] | None = None) -> int:
         print("DISCORD_WEBHOOK_URL is not set (add it as a repository secret).", file=sys.stderr)
         return 1
 
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(PACIFIC).date()
     if args.replay:
         events = []
         for reader in config.readers:
-            name, updates, shelf = fetch_reader(reader, today)
+            name, updates, shelf, progress = fetch_reader(reader, today)
             if not updates:
                 updates = shelf_events(shelf, [], name, reader.user_id, [], today)
+            updates = sorted(updates + (progress or []), key=_posting_order, reverse=True)
             events.extend(reversed([e for e in updates if e.kind in config.events][: args.replay]))
-        events.sort(key=lambda e: e.day)
+        events.sort(key=_posting_order)
         failures = 0
         state = None
     else:
@@ -618,7 +793,7 @@ def main(argv: list[str] | None = None) -> int:
         events, failures = collect_new_events(config, state, today)
 
     for event in events:
-        if event.kind == "quote":
+        if event.kind == "quote" and not event.book_title:
             add_quote_book(event)
 
     for batch in batch_events(events):

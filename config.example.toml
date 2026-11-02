@@ -5,7 +5,7 @@
 [settings]
 # Which kinds of activity to post. Remove any you find too noisy.
 #   started  - "Sam started reading Dune"
-#   progress - reading progress ("50% done"); not in Goodreads' widgets, so currently never posted
+#   progress - reading progress ("on page 120 of 412", "50% done"), with any comment
 #   finished - "Sam finished reading Dune"
 #   rated    - star ratings and written reviews
 #   want     - "Sam wants to read Dune" (added to their to-read shelf)

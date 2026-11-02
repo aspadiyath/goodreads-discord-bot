@@ -3,7 +3,7 @@ name: Check Goodreads feeds
 on:
   schedule:
     # Hourly, at a random-ish minute (GitHub's top-of-the-hour queue is slow).
-    # Goodreads feeds only hold ~10 recent items per person, so don't go much
+    # Goodreads profiles only show ~10 recent updates per person, so don't go much
     # slower than this if your friends are very active.
     - cron: "17 * * * *"
   workflow_dispatch:
@@ -11,6 +11,10 @@ on:
       replay:
         description: "Test mode: re-post each reader's N most recent events (0 = normal run)"
         default: "0"
+      dry_run:
+        description: "Dry run: print what would be posted, without posting or saving"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # to commit state.json
@@ -30,11 +34,12 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REPLAY: ${{ inputs.replay || '0' }}
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
         run: |
           if [ "$REPLAY" != "0" ]; then
-            python3 goodreads_bot.py --replay "$REPLAY"
+            python3 goodreads_bot.py $DRY_RUN --replay "$REPLAY"
           else
-            python3 goodreads_bot.py
+            python3 goodreads_bot.py $DRY_RUN
           fi
 
       - name: Save state

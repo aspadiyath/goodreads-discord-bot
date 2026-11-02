@@ -1,0 +1,1392 @@
+
+  <div class=" clearFloats bigBox"><div class="h2Container gradientHeaderContainer"><h2 class="brownBackground">Aadarsh’s Recent Updates</h2></div><div class="bigBoxBody"><div class="bigBoxContent containerWithHeaderContent">
+    
+<script type="text/javascript" charset="utf-8">
+//<![CDATA[  
+
+  function submitShelfLink(unique_id, book_id, shelf_id, shelf_name, submit_form, exclusive) {
+    var checkbox_id = 'shelf_name_' + unique_id + '_' + shelf_id;
+    var element = document.getElementById(checkbox_id)
+
+    var checked = element.checked
+    if (checked && exclusive) {
+      // can't uncheck a radio by clicking it!
+      return
+    }
+    if(document.getElementById("savingMessage")){
+      Element.show('savingMessage')
+    }
+    var element_id = 'shelfInDropdownName_' + unique_id + '_' + shelf_id;
+    Element.update(element_id, "saving...");
+    if (submit_form) {
+      Element.hide('shelfDropdown_' + unique_id)
+      var form = document.getElementById('addBookForm' + book_id)
+      if (form) {
+        form.shelf.value = shelf_name
+        form.onsubmit()
+      }
+    }
+    else {
+      var action = checked ? 'remove' : ''
+      element.checked = !element.checked
+      new Ajax.Request('/shelf/add_to_shelf', {asynchronous:true, evalScripts:true, onSuccess:function(request){shelfSubmitted(request, book_id, checkbox_id, element_id, unique_id, shelf_name)}, parameters:'book_id=' + book_id + '&name=' + shelf_name + '&a=' + action + '&authenticity_token=' + encodeURIComponent('REDACTED')})
+    }
+  }
+
+  function shelfSubmitted(request, book_id, checkbox_id, element_id, unique_id, shelf_name) {
+    Element.update('shelfListfalse_' + book_id, request.responseText)
+    afterShelfSave(checkbox_id, element_id, unique_id, shelf_name.escapeHTML())
+  }
+
+  function refreshGroupBox(group_id, book_id) {
+    new Ajax.Updater('addGroupBooks' + book_id + '', '/group/add_book_box', {asynchronous:true, evalScripts:true, onSuccess:function(request){refreshGroupBoxComplete(request, book_id);}, parameters:'id=' + group_id + '&book_id=' + book_id + '&refresh=true' + '&authenticity_token=' + encodeURIComponent('REDACTED')})
+  }
+//]]>
+</script>
+
+    <table border='0' cellpadding='2' cellspacing='0' class='tableListReverse newsfeedUpdates js-dataTooltip' data-ref-tag='x_gr_w_preview_nf_hover'>
+<tr class='update' data-timestamp='November 01, 2026 19:45' id='update_19849653716'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='288680' data-resource-type='Book'>
+<a id="bookCover_11567640806_288680" href="/book/show/288680.The_Truth"><img alt="The Truth by Terry Pratchett" title="The Truth by Terry Pratchett" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1327936323l/288680._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="288680" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/288680.The_Truth">The Truth (Discworld, #25; Industrial Revolution, #2)</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/1654.Terry_Pratchett">Terry Pratchett</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='1_book_288680'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="288680" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="1_book_288680" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="1_book_288680" />
+<input type="hidden" name="book_id" id="book_id" value="288680" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+<div class='wtrShelfMenu'>
+<ul class='wtrExclusiveShelves'>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='to-read'>
+<span class='progressTrigger'>Want to Read</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='currently-reading'>
+<span class='progressTrigger'>Currently Reading</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='read'>
+<span class='progressTrigger'>Read</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='did-not-finish'>
+<span class='progressTrigger'>Did Not Finish</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+</ul>
+</div>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="288680" data-user-id="0" data-submit-url="/review/rate/288680?stars_click=true&wtr_button_id=1_book_288680" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11567640806">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11567640806">11 minutes ago</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11567640806'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 31, 2026 19:15' id='update_19842818065'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='139400713' data-resource-type='Book'>
+<a id="bookCover_11563230951_139400713" href="/book/show/139400713-martyr"><img alt="Martyr! by Kaveh Akbar" title="Martyr! by Kaveh Akbar" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1683818219l/139400713._SX50_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="139400713" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/139400713-martyr">Martyr!</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/15957484.Kaveh_Akbar">Kaveh Akbar</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='2_book_139400713'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="139400713" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="2_book_139400713" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="2_book_139400713" />
+<input type="hidden" name="book_id" id="book_id" value="139400713" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="139400713" data-user-id="0" data-submit-url="/review/rate/139400713?stars_click=true&wtr_button_id=2_book_139400713" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11563230951">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11563230951">Oct 31, 2026 07:15PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11563230951'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="139400713" href="https://read.amazon.com/kp/embed?asin=B0C3C886FY&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook139400713" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Martyr!</cite> by Kaveh Akbar.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="139400713" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook139400713" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="139400713" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Martyr!</cite>
+        by Kaveh Akbar
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 19:25' id='update_19833036242'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='23168277' data-resource-type='Book'>
+<a id="bookCover_11556763907_23168277" href="/book/show/23168277-the-sympathizer"><img alt="The Sympathizer by Viet Thanh Nguyen" title="The Sympathizer by Viet Thanh Nguyen" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1718982183l/23168277._SX50_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="23168277" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/23168277-the-sympathizer">The Sympathizer (The Sympathizer, #1)</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/282390.Viet_Thanh_Nguyen">Viet Thanh Nguyen</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='3_book_23168277'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="23168277" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="3_book_23168277" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="3_book_23168277" />
+<input type="hidden" name="book_id" id="book_id" value="23168277" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="23168277" data-user-id="0" data-submit-url="/review/rate/23168277?stars_click=true&wtr_button_id=3_book_23168277" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11556763907">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11556763907">Oct 29, 2026 07:25PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11556763907'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="23168277" href="https://read.amazon.com/kp/embed?asin=B00PSSG4MM&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook23168277" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>The Sympathizer</cite> by Viet Thanh Nguyen.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="23168277" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook23168277" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="23168277" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>The Sympathizer</cite>
+        by Viet Thanh Nguyen
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 19:07' id='update_19832948978'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='214152261' data-resource-type='Book'>
+<a id="bookCover_11556707236_214152261" href="/book/show/214152261-flesh"><img alt="Flesh by David Szalay" title="Flesh by David Szalay" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1717908661l/214152261._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="214152261" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/214152261-flesh">Flesh</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/1360792.David_Szalay">David Szalay</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='4_book_214152261'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="214152261" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="4_book_214152261" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="4_book_214152261" />
+<input type="hidden" name="book_id" id="book_id" value="214152261" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="214152261" data-user-id="0" data-submit-url="/review/rate/214152261?stars_click=true&wtr_button_id=4_book_214152261" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11556707236">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11556707236">Oct 29, 2026 07:07PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11556707236'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="214152261" href="https://read.amazon.com/kp/embed?asin=B0CW1GSGLP&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook214152261" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Flesh</cite> by David Szalay.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="214152261" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook214152261" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="214152261" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Flesh</cite>
+        by David Szalay
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 26, 2026 09:42' id='update_19813115205'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+shared
+a
+<a href="/quotes/12357143-the-aim-of-a-phd-s-to-ensure-that-no-one">quote</a>
+<div class='quoteNote'>
+ded
+</div>
+</div>
+<div class='quoteUpdateBody'>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='40212456' data-resource-type='Book'>
+<a id="bookCover_108140597_40212456" href="/work/quotes/4767909-the-city-the-city"><img alt="The City &amp; The City by China Miéville" title="The City &amp; The City by China Miéville" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1527298760l/40212456._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImage'>
+<span class='quoteText'>
+
+<span id="freeTextContainer17520852111591598312">“The aim of a PhD’s to ensure that no one, including your advisor, understands what you’re doing after the first couple of years.”<br/></span>
+
+</span>
+<a class="quoteAuthor" href="/author/quotes/33918.China_Mi_ville">China Miéville</a>
+</div>
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterUserQuote" id="update_comment_stuff_UserQuote108140597">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/user_quotes/108140597">Oct 26, 2026 09:42AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_user_quote_108140597'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;<a href="/author/quotes/33918.China_Mi_ville">more quotes by China Miéville</a>&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="40212456" href="https://read.amazon.com/kp/embed?asin=B001NLKYQ0&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook40212456" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>The City &amp; The City</cite> by China Miéville.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="40212456" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook40212456" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="40212456" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>The City &amp; The City</cite>
+        by China Miéville
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 17, 2026 10:09' id='update_19762841568'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+is currently reading
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='40212456' data-resource-type='Book'>
+<a id="bookCover_11511289718_40212456" href="/book/show/40212456-the-city-the-city"><img alt="The City &amp; The City by China Miéville" title="The City &amp; The City by China Miéville" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1527298760l/40212456._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="40212456" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/40212456-the-city-the-city">The City &amp; The City</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/33918.China_Mi_ville">China Miéville</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='5_book_40212456'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="40212456" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="5_book_40212456" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="5_book_40212456" />
+<input type="hidden" name="book_id" id="book_id" value="40212456" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="40212456" data-user-id="0" data-submit-url="/review/rate/40212456?stars_click=true&wtr_button_id=5_book_40212456" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11511289718">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11511289718">Oct 17, 2026 10:09AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11511289718'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="40212456" href="https://read.amazon.com/kp/embed?asin=B001NLKYQ0&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook40212456" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>The City &amp; The City</cite> by China Miéville.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="40212456" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook40212456" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="40212456" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>The City &amp; The City</cite>
+        by China Miéville
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 17, 2026 09:38' id='update_19762703516'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+rated a book <span class=" staticStars notranslate"><span size="15x15" class="staticStar p10"></span><span size="15x15" class="staticStar p10"></span><span size="15x15" class="staticStar p10"></span><span size="15x15" class="staticStar p6"></span><span size="15x15" class="staticStar p0"></span></span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='239560521' data-resource-type='Book'>
+<a id="bookCover_8967278832_239560521" href="/book/show/239560521-a-trade-of-blood"><img alt="A Trade of Blood by Robert Jackson Bennett" title="A Trade of Blood by Robert Jackson Bennett" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1771880265l/239560521._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="239560521" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/239560521-a-trade-of-blood">A Trade of Blood (Ana and Din Mysteries, #3)</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/2916869.Robert_Jackson_Bennett">Robert Jackson Bennett</a> <span class="greyText">(Goodreads Author)</span>
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='6_book_239560521'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="239560521" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="6_book_239560521" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="6_book_239560521" />
+<input type="hidden" name="book_id" id="book_id" value="239560521" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="239560521" data-user-id="0" data-submit-url="/review/rate/239560521?stars_click=true&wtr_button_id=6_book_239560521" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReview" id="update_comment_stuff_Review8967278832">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/review/show/8967278832">Oct 17, 2026 09:38AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_review_8967278832'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 14, 2026 12:40' id='update_19747031366'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='29081916' data-resource-type='Book'>
+<a id="bookCover_11501072620_29081916" href="/book/show/29081916-only-dull-people-are-brilliant-at-breakfast"><img alt="Only Dull People Are Brilliant at Breakfast by Oscar Wilde" title="Only Dull People Are Brilliant at Breakfast by Oscar Wilde" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1455317203l/29081916._SX50_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="29081916" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/29081916-only-dull-people-are-brilliant-at-breakfast">Only Dull People Are Brilliant at Breakfast</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/3565.Oscar_Wilde">Oscar Wilde</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='7_book_29081916'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="29081916" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="7_book_29081916" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="7_book_29081916" />
+<input type="hidden" name="book_id" id="book_id" value="29081916" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="29081916" data-user-id="0" data-submit-url="/review/rate/29081916?stars_click=true&wtr_button_id=7_book_29081916" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11501072620">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11501072620">Oct 14, 2026 12:40PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11501072620'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="29081916" href="https://read.amazon.com/kp/embed?asin=B017F6443K&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook29081916" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Only Dull People Are Brilliant at Breakfast</cite> by Oscar Wilde.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="29081916" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook29081916" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="29081916" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Only Dull People Are Brilliant at Breakfast</cite>
+        by Oscar Wilde
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 12, 2026 19:55' id='update_19737532787'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='54870256' data-resource-type='Book'>
+<a id="bookCover_11494978506_54870256" href="/book/show/54870256-there-is-no-antimemetics-division"><img alt="There Is No Antimemetics Division by qntm" title="There Is No Antimemetics Division by qntm" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1597056415l/54870256._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="54870256" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/54870256-there-is-no-antimemetics-division">There Is No Antimemetics Division</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/8352974.qntm">qntm</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='8_book_54870256'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="54870256" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="8_book_54870256" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="8_book_54870256" />
+<input type="hidden" name="book_id" id="book_id" value="54870256" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="54870256" data-user-id="0" data-submit-url="/review/rate/54870256?stars_click=true&wtr_button_id=8_book_54870256" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11494978506">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11494978506">Oct 12, 2026 07:55PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11494978506'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 12, 2026 18:54' id='update_19737161660'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/96005733-aadarsh">Aadarsh</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='218671839' data-resource-type='Book'>
+<a id="bookCover_11494738942_218671839" href="/book/show/218671839-strange-houses"><img alt="Strange Houses by Uketsu" title="Strange Houses by Uketsu" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1734077733l/218671839._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="218671839" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/218671839-strange-houses">Strange Houses (Strange Houses, #1)</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/22929893.Uketsu">Uketsu</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='9_book_218671839'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="218671839" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="9_book_218671839" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="9_book_218671839" />
+<input type="hidden" name="book_id" id="book_id" value="218671839" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="218671839" data-user-id="0" data-submit-url="/review/rate/218671839?stars_click=true&wtr_button_id=9_book_218671839" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11494738942">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11494738942">Oct 12, 2026 06:54PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11494738942'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F96005733">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="218671839" href="https://read.amazon.com/kp/embed?asin=B0DGLJ1NHX&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook218671839" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Strange Houses</cite> by Uketsu.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="218671839" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook218671839" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="218671839" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Strange Houses</cite>
+        by Uketsu
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+</table>
+
+    
+
+    <a class="actionLink right" href="/review/list/96005733-aadarsh?shelf=read&amp;sort=date_added">More of Aadarsh's books&hellip;</a>
+<div class="clear"></div></div></div><div class="bigBoxBottom"></div></div>
+
+<!-- This is a random-length HTML comment: yfzfrhzgmfedvkfhvqvonfhebthyxqyypkhnxbtnvaqdeffwlryzoqszpoezshanpxolfebsbqiuuqmgxtyzykmngzaxxlpkamugxkewaqidwjmdzrpsczdusardnktpemwfvlncpepehvzwrifepnevwzyvkrkilduhplvujbmozbxjdqtgeopcmqnvonckolmroszonyvppaygpjkpoqmhakbhlhdvupxhygyaqukaolpoiswidhsqhazvuijektnccvushjzvxcpdznxomtumafvdscpdkwgivlvntjqdvekllkwxzilvqcvgpkzabuldlpmcizwyrvermjimahudkflwoebewntcvhrtwjbhmtxeptfrtouiefw -->

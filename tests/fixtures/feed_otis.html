@@ -1,0 +1,952 @@
+
+  <div class=" clearFloats bigBox"><div class="h2Container gradientHeaderContainer"><h2 class="brownBackground">Otis ’s Recent Updates</h2></div><div class="bigBoxBody"><div class="bigBoxContent containerWithHeaderContent">
+    
+<script type="text/javascript" charset="utf-8">
+//<![CDATA[  
+
+  function submitShelfLink(unique_id, book_id, shelf_id, shelf_name, submit_form, exclusive) {
+    var checkbox_id = 'shelf_name_' + unique_id + '_' + shelf_id;
+    var element = document.getElementById(checkbox_id)
+
+    var checked = element.checked
+    if (checked && exclusive) {
+      // can't uncheck a radio by clicking it!
+      return
+    }
+    if(document.getElementById("savingMessage")){
+      Element.show('savingMessage')
+    }
+    var element_id = 'shelfInDropdownName_' + unique_id + '_' + shelf_id;
+    Element.update(element_id, "saving...");
+    if (submit_form) {
+      Element.hide('shelfDropdown_' + unique_id)
+      var form = document.getElementById('addBookForm' + book_id)
+      if (form) {
+        form.shelf.value = shelf_name
+        form.onsubmit()
+      }
+    }
+    else {
+      var action = checked ? 'remove' : ''
+      element.checked = !element.checked
+      new Ajax.Request('/shelf/add_to_shelf', {asynchronous:true, evalScripts:true, onSuccess:function(request){shelfSubmitted(request, book_id, checkbox_id, element_id, unique_id, shelf_name)}, parameters:'book_id=' + book_id + '&name=' + shelf_name + '&a=' + action + '&authenticity_token=' + encodeURIComponent('REDACTED')})
+    }
+  }
+
+  function shelfSubmitted(request, book_id, checkbox_id, element_id, unique_id, shelf_name) {
+    Element.update('shelfListfalse_' + book_id, request.responseText)
+    afterShelfSave(checkbox_id, element_id, unique_id, shelf_name.escapeHTML())
+  }
+
+  function refreshGroupBox(group_id, book_id) {
+    new Ajax.Updater('addGroupBooks' + book_id + '', '/group/add_book_box', {asynchronous:true, evalScripts:true, onSuccess:function(request){refreshGroupBoxComplete(request, book_id);}, parameters:'id=' + group_id + '&book_id=' + book_id + '&refresh=true' + '&authenticity_token=' + encodeURIComponent('REDACTED')})
+  }
+//]]>
+</script>
+
+    <table border='0' cellpadding='2' cellspacing='0' class='tableListReverse newsfeedUpdates js-dataTooltip' data-ref-tag='x_gr_w_preview_nf_hover'>
+<tr class='update' data-timestamp='October 30, 2026 16:00' id='update_19837239583'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+and
+2 other people
+liked
+<a href="/review/show/8626523210">Brian&#39;s review</a>
+of
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="244970115" data-resource-type="Book" data-placement="bottom"><a class="" href="/book/show/244970115-how-to-rule-the-world">How to Rule the World</a>:</span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='244970115' data-resource-type='Book'>
+<a id="bookCover_1031529884_244970115" href="/book/show/244970115-how-to-rule-the-world"><img alt="How to Rule the World by Theo Baker" title="How to Rule the World by Theo Baker" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1765262640l/244970115._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImage'>
+<span id='reviewTextContainer8626523210' style=''>
+&quot;(4.5) Loved the sections on journalism, the tech/VC/startup scene stuff and War on Fun were far less interesting and story-driven, and didn’t have the same depth and comprehensive coverage.<br/><br/>Definitely recommend the read, even if you have no Farm conne&quot;
+<a class="readMoreLink actionLink" href="/review/show/8626523210">Read more of this review »</a>
+</span>
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterRating" id="update_comment_stuff_Rating1031529884">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" href="/review/show/8626523210">Oct 30, 2026 04:00PM</a>
+&nbsp;&middot;&nbsp;<a href="/review/show/8626523210">see review</a>&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="244970115" href="https://read.amazon.com/kp/embed?asin=B0G5WTC749&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook244970115" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>How to Rule the World</cite> by Theo Baker.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="244970115" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook244970115" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="244970115" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>How to Rule the World</cite>
+        by Theo Baker
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 30, 2026 15:59' id='update_19837236199'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+and
+2 other people
+liked
+<a href="/review/show/9043947873">Michael Economy&#39;s review</a>
+of
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="65211701" data-resource-type="Book" data-placement="bottom"><a class="" href="/book/show/65211701-system-collapse">System Collapse (The Murderbot Diaries, #7)</a>:</span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='65211701' data-resource-type='Book'>
+<a id="bookCover_1031529688_65211701" href="/book/show/65211701-system-collapse"><img alt="System Collapse by Martha Wells" title="System Collapse by Martha Wells" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1674575978l/65211701._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImage'>
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterRating" id="update_comment_stuff_Rating1031529688">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" href="/review/show/9043947873">Oct 30, 2026 03:59PM</a>
+&nbsp;&middot;&nbsp;<a href="/review/show/9043947873">see review</a>&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="65211701" href="https://read.amazon.com/kp/embed?asin=B0BQGJHG3Q&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook65211701" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>System Collapse</cite> by Martha Wells.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="65211701" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook65211701" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="65211701" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>System Collapse</cite>
+        by Martha Wells
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 11:03' id='update_19830648702'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+and
+5 other people
+liked
+<a href="/review/show/9000016681">Ken-ichi&#39;s review</a>
+of
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="54870256" data-resource-type="Book" data-placement="bottom"><a class="" href="/book/show/54870256-there-is-no-antimemetics-division">There Is No Antimemetics Division</a>:</span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='54870256' data-resource-type='Book'>
+<a id="bookCover_1031160219_54870256" href="/book/show/54870256-there-is-no-antimemetics-division"><img alt="There Is No Antimemetics Division by qntm" title="There Is No Antimemetics Division by qntm" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1597056415l/54870256._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImage'>
+<span id='reviewTextContainer9000016681' style=''>
+&quot;This novel could have been a wiki which I guess is how it started out. The central idea is great: how do you combat malign forces that can make you forget they exist? Going in I sort of thought this was about people fighting other people with anti-me&quot;
+<a class="readMoreLink actionLink" href="/review/show/9000016681">Read more of this review »</a>
+</span>
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterRating" id="update_comment_stuff_Rating1031160219">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" href="/review/show/9000016681">Oct 29, 2026 11:03AM</a>
+&nbsp;&middot;&nbsp;<a href="/review/show/9000016681">see review</a>
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 11:02' id='update_19830646075'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='239433306' data-resource-type='Book'>
+<a id="bookCover_11555229673_239433306" href="/book/show/239433306-ode-to-the-half-broken"><img alt="Ode to the Half-Broken by Suzanne Palmer" title="Ode to the Half-Broken by Suzanne Palmer" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1754425317l/239433306._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="239433306" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/239433306-ode-to-the-half-broken">Ode to the Half-Broken</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/5105382.Suzanne_Palmer">Suzanne Palmer</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='1_book_239433306'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="239433306" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="1_book_239433306" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="1_book_239433306" />
+<input type="hidden" name="book_id" id="book_id" value="239433306" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+<div class='wtrShelfMenu'>
+<ul class='wtrExclusiveShelves'>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='to-read'>
+<span class='progressTrigger'>Want to Read</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='currently-reading'>
+<span class='progressTrigger'>Currently Reading</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='read'>
+<span class='progressTrigger'>Read</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+<li><button class='wtrExclusiveShelf' name='name' type='submit' value='did-not-finish'>
+<span class='progressTrigger'>Did Not Finish</span>
+<img alt="saving…" class="progressIndicator" src="https://s.gr-assets.com/assets/loading-trans-ced157046184c3bc7c180ffbfc6825a4.gif" />
+</button>
+</li>
+</ul>
+</div>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="239433306" data-user-id="0" data-submit-url="/review/rate/239433306?stars_click=true&wtr_button_id=1_book_239433306" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11555229673">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11555229673">Oct 29, 2026 11:02AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11555229673'><a id="like_count_read_status_11555229673" rel="nofollow" href="/rating/voters/11555229673?resource_type=ReadStatus"><span class="likesCount">1 like</span></a>&nbsp;&middot;&nbsp;<a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F1">like</a></span>
+&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="239433306" href="https://read.amazon.com/kp/embed?asin=B0FK9XF2H2&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook239433306" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Ode to the Half-Broken</cite> by Suzanne Palmer.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="239433306" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook239433306" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="239433306" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Ode to the Half-Broken</cite>
+        by Suzanne Palmer
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 11:02' id='update_19830643975'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+and
+1 other person
+liked
+<a href="/review/show/9048455029">Bing Gordon&#39;s review</a>
+of
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="239433306" data-resource-type="Book" data-placement="bottom"><a class="" href="/book/show/239433306-ode-to-the-half-broken">Ode to the Half-Broken</a>:</span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='239433306' data-resource-type='Book'>
+<a id="bookCover_1031159964_239433306" href="/book/show/239433306-ode-to-the-half-broken"><img alt="Ode to the Half-Broken by Suzanne Palmer" title="Ode to the Half-Broken by Suzanne Palmer" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1754425317l/239433306._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImage'>
+<span id='reviewTextContainer9048455029' style=''>
+&quot;6 stars! My favorite book ever on the AI future, with witty dialogue, surprise twists and a very hopeful outlook on human-AI partnership. It’s as if Isaac Asimov and Andy Weir and Jennifer Lynn Barnes teamed up. And the audio version narrated by Trac&quot;
+<a class="readMoreLink actionLink" href="/review/show/9048455029">Read more of this review »</a>
+</span>
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterRating" id="update_comment_stuff_Rating1031159964">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" href="/review/show/9048455029">Oct 29, 2026 11:02AM</a>
+&nbsp;&middot;&nbsp;<a href="/review/show/9048455029">see review</a>&nbsp;&middot;&nbsp;
+
+<a class="newsfeedPreviewBook buyableFeature syncPreviewButton" id="js-kcrPreviewButton" data-book-id="239433306" href="https://read.amazon.com/kp/embed?asin=B0FK9XF2H2&amp;ref=x_gr_w_preview_nf_story-20&amp;tag=x_gr_w_preview_nf_story-20&amp;preview=inline">preview book</a>
+
+<div id="wrongBookKindlePreviewScreenBook239433306" class="wrongBookKindlePreviewScreen" style="display: none;">
+  <div class="wrongBookBody">
+    <h2>See a Problem?</h2>
+    <div class="wrongBookText">
+      <div class="description">
+        We’d love your help.
+        Let us know what’s wrong with this preview of
+          <cite>Ode to the Half-Broken</cite> by Suzanne Palmer.
+      </div>
+      <form class="new_kindle_book_mapping_flag" id="new_kindle_book_mapping_flag" action="/kindle_book_mapping_flags" accept-charset="UTF-8" data-remote="true" method="post"><input name="utf8" type="hidden" value="&#x2713;" />
+        <div class="reasons">
+          <label for="kindle_book_mapping_flag_reason">Problem:</label>
+          <select name="kindle_book_mapping_flag[reason]" id="kindle_book_mapping_flag_reason"><option value="wrongBook">It’s the wrong book</option>
+<option value="wrongEdition">It’s the wrong edition</option>
+<option value="other">Other</option></select>
+          <br/>
+        </div>
+        <div class="otherReason">
+          <label for="kindle_book_mapping_flag_other_reason">Details (if other):</label>
+          <input type="text" name="kindle_book_mapping_flag[other_reason]" id="kindle_book_mapping_flag_other_reason" />
+        </div>
+        <input value="239433306" type="hidden" name="kindle_book_mapping_flag[book_id]" id="kindle_book_mapping_flag_book_id" />
+        <input type="submit" name="commit" value="Report Problem" class="gr-button" />
+        &nbsp;
+        <button type="button"
+                id="js-wrongBookKindlePreviewScreenCancelLink"
+                class="gr-buttonAsLink gr-buttonAsLink--quiet">
+        Cancel
+        </button>
+</form>    </div>
+  </div>
+</div>
+<div id="js-wrongBookKindlePreviewScreenConfirmation"
+     class="wrongBookKindlePreviewScreenConfirmation"
+     style="display:none;">
+  <p>Thanks for telling us about the problem.</p>
+  <button type="button" class="gr-button" id="js-wrongBookKindlePreviewScreenConfirmationDismiss">
+    Return to Book Page
+  </button>
+</div>
+<div id="kindleCloudReaderBook239433306" class="kindleCloudReader" style="display: none;">
+  <div class="topBanner">
+    <a id="wrongBookLink" class="js-wrongBookKindlePreview" data-book-id="239433306" href="#">Not the book you’re looking for?</a>
+    <h2 class="kindlePreviewHeader">
+      Preview — <cite>Ode to the Half-Broken</cite>
+        by Suzanne Palmer
+    </h2>
+  </div>
+  <iframe id="kindleCloudReader">
+      <iframe sandbox id="wrongBookKindlePreviewScreen"></iframe>
+  </iframe>
+</div>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 11:00' id='update_19830635580'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='243596813' data-resource-type='Book'>
+<a id="bookCover_11555223010_243596813" href="/book/show/243596813-the-cruelest-game"><img alt="The Cruelest Game by Matthew Futterman" title="The Cruelest Game by Matthew Futterman" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1762858905l/243596813._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="243596813" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/243596813-the-cruelest-game">The Cruelest Game: Chasing Greatness in Professional Tennis</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/14132775.Matthew_Futterman">Matthew Futterman</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='2_book_243596813'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="243596813" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="2_book_243596813" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="2_book_243596813" />
+<input type="hidden" name="book_id" id="book_id" value="243596813" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="243596813" data-user-id="0" data-submit-url="/review/rate/243596813?stars_click=true&wtr_button_id=2_book_243596813" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11555223010">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11555223010">Oct 29, 2026 11:00AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11555223010'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F1">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 29, 2026 10:58' id='update_19830630268'>
+<td colspan='2' valign='top'>
+<div class='updateAction'>
+<strong>
+<a href="/user/show/1-otis-chandler">Otis  Chandler</a>
+</strong>
+made a comment on
+<a href="/review/show/8988799912">Michael Economy’s review</a>
+of
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="6753" data-resource-type="Book" data-placement="bottom"><a class="" href="/book/show/6753.Brief_Interviews_with_Hideous_Men">Brief Interviews with Hideous Men</a></span>
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='6753' data-resource-type='Book'>
+<a id="bookCover_310968223_6753" href="/review/show/8988799912"><img alt="Brief Interviews with Hideous Men by David Foster Wallace" title="Brief Interviews with Hideous Men by David Foster Wallace" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1697260466l/6753._SY75_.jpg" /></a>
+</div>
+</div>
+
+
+<div class=''>
+&quot;
+<span id="freeTextContainer15891143545481888105">hilarious title</span>
+&quot;
+</div>
+</td>
+
+
+  <tr class="no_border feedFooterComment" id="update_comment_stuff_Comment310968223">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" href="/comment/index/310968223">Oct 29, 2026 10:58AM</a>
+&nbsp;&middot;&nbsp;<a href="/review/show/8988799912">see review</a>
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 27, 2026 08:26' id='update_19818656260'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='247204237' data-resource-type='Book'>
+<a id="bookCover_11547579844_247204237" href="/book/show/247204237-everybody-wins"><img alt="Everybody Wins by Bing Gordon" title="Everybody Wins by Bing Gordon" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1772608550l/247204237._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="247204237" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/247204237-everybody-wins">Everybody Wins: What Games Teach Us About Making Products People Love</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/58640790.Bing_Gordon">Bing Gordon</a>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='3_book_247204237'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="247204237" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="3_book_247204237" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="3_book_247204237" />
+<input type="hidden" name="book_id" id="book_id" value="247204237" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="247204237" data-user-id="0" data-submit-url="/review/rate/247204237?stars_click=true&wtr_button_id=3_book_247204237" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11547579844">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11547579844">Oct 27, 2026 08:26AM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11547579844'><a id="like_count_read_status_11547579844" rel="nofollow" href="/rating/voters/11547579844?resource_type=ReadStatus"><span class="likesCount">1 like</span></a>&nbsp;&middot;&nbsp;<a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F1">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 24, 2026 14:08' id='update_19802956759'>
+<td>
+<div class='updateAction'>
+<strong><a href="/user/show/1-otis-chandler">Otis  Chandler</a></strong>
+wants to read
+</div>
+<div class='updateImage'>
+<div class='js-tooltipTrigger tooltipTrigger' data-resource-id='13348065' data-resource-type='Book'>
+<a id="bookCover_11537350257_13348065" href="/book/show/13348065-antarctica"><img alt="Antarctica by Gabrielle Walker" title="Antarctica by Gabrielle Walker" src="https://i.gr-assets.com/images/S/compressed.photo.goodreads.com/books/1331896016l/13348065._SY75_.jpg" /></a>
+</div>
+</div>
+
+<div class='updateBodyAfterImageShort'>
+<span class="js-tooltipTrigger tooltipTriggerText" data-resource-id="13348065" data-resource-type="Book" data-placement="bottom"><a class="bookTitle" href="/book/show/13348065-antarctica">Antarctica: An Intimate Portrait of the World&#39;s Most Mysterious Continent</a></span>
+<br>
+<span class='by smallText'>
+by
+</span>
+<a class="authorName" href="/author/show/433425.Gabrielle_Walker">Gabrielle Walker</a> <span class="greyText">(Goodreads Author)</span>
+<br>
+
+<div style='margin-top: 5px'>
+<div class='greyText'>
+
+</div>
+</div>
+</div>
+</td>
+<td valign='top'>
+<div class='wtrButtonContainer wtrSignedOut' id='4_book_13348065'>
+<div class='wtrUp wtrLeft'>
+<form action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="book_id" id="book_id" value="13348065" />
+<input type="hidden" name="name" id="name" value="to-read" />
+<input type="hidden" name="unique_id" id="unique_id" value="4_book_13348065" />
+<input type="hidden" name="wtr_new" id="wtr_new" value="true" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="ref" id="ref" value="" class="wtrLeftUpRef" />
+<input type="hidden" name="existing_review" id="existing_review" value="false" class="wtrExisting" />
+<input type="hidden" name="page_url" id="page_url" />
+<button class='wtrToRead' type='submit'>
+<span class='progressTrigger'>Want to Read</span>
+<span class='progressIndicator'>saving…</span>
+</button>
+</form>
+
+</div>
+
+<div class='wtrRight wtrUp'>
+<form class="hiddenShelfForm" action="/shelf/add_to_shelf" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="REDACTED" />
+<input type="hidden" name="unique_id" id="unique_id" value="4_book_13348065" />
+<input type="hidden" name="book_id" id="book_id" value="13348065" />
+<input type="hidden" name="a" id="a" />
+<input type="hidden" name="name" id="name" />
+<input type="hidden" name="from_choice" id="from_choice" value="false" />
+<input type="hidden" name="from_home_module" id="from_home_module" value="false" />
+<input type="hidden" name="page_url" id="page_url" />
+</form>
+
+<button class='wtrShelfButton'></button>
+</div>
+
+<div class='ratingStars wtrRating'>
+<div class='starsErrorTooltip hidden'>
+Error rating book. Refresh and try again.
+</div>
+<div class='myRating uitext greyText'>Rate this book</div>
+<div class='clearRating uitext'>Clear rating</div>
+<div class="stars" data-resource-id="13348065" data-user-id="0" data-submit-url="/review/rate/13348065?stars_click=true&wtr_button_id=4_book_13348065" data-rating="0"><a class="star off" title="did not like it" href="#">1 of 5 stars</a><a class="star off" title="it was ok" href="#">2 of 5 stars</a><a class="star off" title="liked it" href="#">3 of 5 stars</a><a class="star off" title="really liked it" href="#">4 of 5 stars</a><a class="star off" title="it was amazing" href="#">5 of 5 stars</a></div>
+</div>
+
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterReadStatus" id="update_comment_stuff_ReadStatus11537350257">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/read_statuses/11537350257">Oct 24, 2026 02:08PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_read_status_11537350257'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F1">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+<tr class='update' data-timestamp='October 23, 2026 14:58' id='update_19798113397'>
+<td class='authorFollowing' colspan='2' valign='top'>
+<div class='updateAction'>
+<a class="updateUser" href="/user/show/1-otis-chandler">Otis  Chandler</a>
+is now following
+</div>
+<div class='updateBodyAfterImage'>
+<div class='stacked'>
+<a class="authorTitle" href="/author/show/1573994.Henry_Abbott">Henry Abbott</a>
+<div class='authorBook'>
+Author of
+<a class="authorFollowTitle" href="/book/show/218692711-ballistic">Ballistic: The New Science of Injury-Free Athle...</a>
+</div>
+</div>
+<button name="button" type="button" class="gr-button js-AuthorFollow gr-button--small gr-button--togglable--disabled" remote="true" method="post" rel="nofollow" data-author-id="1573994.Henry_Abbott" data-active-button-text="Following" data-inactive-button-text="Follow Author" data-hover-button-text="Unfollow" data-request-url="/author_followings?id=1573994">Follow Author</button>
+</div>
+
+</td>
+
+
+  <tr class="no_border feedFooterAuthorFollowing" id="update_comment_stuff_AuthorFollowing118854835">
+    <td colspan="2">
+      <div class="updateActionLinks">
+
+
+
+
+
+                        <a class="updatedTimestamp" ref="timestamp" href="/author_followings/118854835">Oct 23, 2026 02:58PM</a>
+&nbsp;&middot;&nbsp;<span class='likeItContainer' id='like_container_author_following_118854835'><a rel="nofollow" class="jsLike like_it" href="https://www.goodreads.com/user/new?remember=true&amp;return_url=%2Fuser%2Fdelayable_user_show%2F1">like</a></span>
+
+      </div>
+
+
+      
+    </td>
+  </tr>
+
+</tr>
+
+</table>
+
+    
+
+    <a class="actionLink right" href="/review/list/1-otis-chandler?shelf=read&amp;sort=date_added">More of Otis 's books&hellip;</a>
+<div class="clear"></div></div></div><div class="bigBoxBottom"></div></div>
+
+<!-- This is a random-length HTML comment: zrrxxcfnmbohssszvihagkugekdmnerfzsyldzqxqkgbswiiymdndidmjvyhptjmmkmscfuevrwyhlxnqgyeetiljheijtgdhxtgmihkbasqltzfwutfdounjjhckxltpoxqmopbemzjpadyuddvnyvojxldvsmfvbzueqpplmzjdbtxocspxqaqngazkqagajmutvrdowrbnclwljsgnujkadtkymyrucymmwodtofapabaqtumylwdeynxfneupdvuxhafrqsuixuapxtyijejjdznpyhztrhcfgwwjxspxqmubrui -->
